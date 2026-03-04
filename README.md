@@ -1,1 +1,4 @@
-# AIO-AI – All-in-One KI PlattformnnSync-Test nach Reset
+# AIO_AI
+All-in-One KI Plattform
+
+Sync läuft jetzt sauber über GitHub + Hugging Face Spaces.
