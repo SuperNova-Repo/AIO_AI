@@ -1,54 +1,61 @@
-name: Sync to Hugging Face Space
+name: Bi-Directional Sync
 
 on:
   push:
-    branches:
-      - main
-
+    branches: [main]
+  schedule:
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 jobs:
-  sync-to-hf:
+  sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout GitHub Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Create and activate virtual environment
+          token: ${{ secrets.GH_AIO_AI }}
+      
+      - name: Configure Git
         run: |
-          python -m venv hf-venv
-          source hf-venv/bin/activate
-          python -m pip install --upgrade pip
-
-      - name: Install Hugging Face Hub in venv
+          git config user.name "🤖 Auto-Sync"
+          git config user.email "sync@actions.github.com"
+      
+      - name: Setup HF Remote
         run: |
-          source hf-venv/bin/activate
-          pip install --no-cache-dir huggingface_hub[cli]
-
-      - name: Login to Hugging Face
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN_ALL_REPOS }}
+          git remote add hf https://USER:${{ secrets.HF_TOKEN_ALL_REPOS }}@huggingface.co/spaces/Kostya-Lolinger/dr-lila-therapist 2>/dev/null || true
+          git remote -v
+      
+      - name: Bi-Directional Sync
         run: |
-          source hf-venv/bin/activate
-          huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential=false
-
-      - name: Push to Hugging Face Space
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN_ALL_REPOS }}
-        run: |
-          source hf-venv/bin/activate
-          huggingface-cli repo-files \
-            --repo-type space \
-            --repo-id Kostya-Lolinger/AIO_AI \
-            upload \
-            --revision main \
-            --delete-repo-files \
-            --commit-message "Auto-sync from GitHub @ ${{ github.sha }}" \
-            . .
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔄 Starting Bi-Directional Sync"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          # Fetch from HF
+          echo "📥 Fetching from HuggingFace..."
+          git fetch hf main 2>/dev/null || echo "⚠️  Fetch warning (might be first run)"
+          
+          # Check for HF updates
+          if git rev-parse hf/main >/dev/null 2>&1; then
+            if ! git diff --quiet HEAD hf/main; then
+              echo "📥 HF has updates! Merging..."
+              git merge hf/main --no-edit --allow-unrelated-histories -m "Sync from HF [$(date '+%Y-%m-%d %H:%M')]"
+              git push origin main
+              echo "✅ HF → GitHub: Synced"
+            else
+              echo "ℹ️  HF → GitHub: No changes"
+            fi
+          fi
+          
+          # Push to HF
+          echo "📤 Pushing to HuggingFace..."
+          if git push hf main 2>&1; then
+            echo "✅ GitHub → HF: Synced"
+          else
+            echo "⚠️  GitHub → HF: Push failed (might be already up-to-date)"
+          fi
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Sync Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
