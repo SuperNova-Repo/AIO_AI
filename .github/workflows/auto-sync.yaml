@@ -26,16 +26,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install --no-cache-dir huggingface_hub[cli]
 
+      - name: Add pip user bin to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Login to Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_ALL_REPOS }}
-        run: python -m huggingface_hub login --token "$HF_TOKEN" --add-git-credential=false
+        run: huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential=false
 
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_ALL_REPOS }}
         run: |
-          python -m huggingface_hub repo-files \
+          huggingface-cli repo-files \
             --repo-type space \
             --repo-id Kostya-Lolinger/AIO_AI \
             upload \
