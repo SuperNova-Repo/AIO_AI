@@ -34,7 +34,11 @@ def create_character(u, name, prompt):
     return f"✅ '{name}' erstellt!"
 
 def chat(msg, u, char):
-    if not char or char == "Keine Charaktere": return "Bitte Charakter wählen"
+    # FIX: char kann Liste sein (Gradio-Dropdown-Verhalten)
+    if isinstance(char, list):
+        char = char[0] if char else ""
+    if not char or char == "Keine Charaktere":
+        return "Bitte Charakter wählen"
     p = conn.execute("SELECT prompt FROM characters WHERE username=? AND name=?", (u, char)).fetchone()
     system = p[0] if p else "Du bist hilfreich."
     return client.text_generation(f"{system}\n\nUser: {msg}", model="microsoft/Phi-3-mini-4k-instruct", max_new_tokens=600)
