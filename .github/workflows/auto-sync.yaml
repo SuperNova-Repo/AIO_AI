@@ -1,3 +1,12 @@
+name: Sync to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
 jobs:
   sync-to-hf:
     runs-on: ubuntu-latest
@@ -12,7 +21,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Hugging Face Hub CLI
+      - name: Install Hugging Face Hub
         run: |
           python -m pip install --upgrade pip
           pip install --no-cache-dir huggingface_hub[cli]
@@ -24,7 +33,7 @@ jobs:
 
       - name: Push to Hugging Face Space
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN_ALL_REPOS }}
         run: |
           python -m huggingface_hub repo-files \
             --repo-type space \
