@@ -1,0 +1,53 @@
+# .github/workflows/auto-sync.yaml
+
+name: Sync to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+
+  # Optional: Manuell auslösen können
+  workflow_dispatch:
+
+jobs:
+  sync-to-hf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # volle History für sauberes git push
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Hugging Face Hub
+        run: |
+          python -m pip install --upgrade pip
+          pip install huggingface_hub[cli,torch]
+
+      - name: Login to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: huggingface-cli login --token "$HF_TOKEN" --add-git-credential
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          huggingface-cli repo-files \
+            --repo-type space \
+            --repo-id Kostya-Lolinger/AIO_AI \
+            upload \
+            --revision main \
+            --delete-repo-files \
+            --commit-message "Auto-sync from GitHub @ ${{ github.sha }}" \
+            . .
+
+      - name: Show last commit on HF
+        run: |
+          echo "Pushed commit: ${{ github.sha }}"
+          echo "https://huggingface.co/spaces/Kostya-Lolinger/AIO_AI/tree/main"
