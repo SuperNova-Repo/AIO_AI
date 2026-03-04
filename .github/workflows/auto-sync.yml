@@ -29,34 +29,34 @@ jobs:
       - name: Bi-Directional Sync
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔄 Starting Bi-Directional Sync"
+          echo "🔄 Starte bi-directionale Sync"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           
-          echo "📥 Fetching from HuggingFace..."
-          git fetch hf main 2>/dev/null || echo "⚠️  Fetch warning (might be first run)"
+          echo "📥 Abrufen von HuggingFace..."
+          git fetch hf main 2>/dev/null || echo "⚠️  Abrufwarnung (möglicherweise beim ersten Mal ausgeführt)"
           
           if git rev-parse hf/main >/dev/null 2>&1; then
             if ! git diff --quiet HEAD hf/main; then
-              echo "📥 HF has updates! Merging (theirs on conflict)..."
+              echo "📥 HF hat Updates! Zusammenführen (ihre stehen im Konflikt) ..."
               git merge hf/main \
                 --no-edit \
                 --allow-unrelated-histories \
                 -X theirs \
-                -m "Sync from HF [$(date '+%Y-%m-%d %H:%M')]" || {
+                -m "Von HF synchronisieren [$(date '+%Y-%m-%d %H:%M')]" || {
                   echo "⚠️ Merge hatte Konflikte – trotzdem weitermachen"
                   git merge --continue || true
                 }
               git push origin main || echo "⚠️ Push zu origin fehlgeschlagen"
-              echo "✅ HF → GitHub: Synced"
+              echo "✅ HF → GitHub: Synchronisiert"
             else
-              echo "ℹ️  HF → GitHub: No changes"
+              echo "ℹ️  HF → GitHub: keine Änderungen"
             fi
           fi
           
-          echo "📤 Pushing to HuggingFace..."
-          git push hf main && echo "✅ GitHub → HF: Synced" \
-            || echo "⚠️  GitHub → HF: Push failed (might be already up-to-date)"
+          echo "📤 Pushen zu HuggingFace..."
+          git push hf main && echo "✅ GitHub → HF: Synchronisiert" \
+            || echo "⚠️  GitHub → HF: Push fehlgeschlagen (möglicherweise bereits aktuell)"
           
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "✅ Sync Complete!"
+          echo "✅ Synchronisierung abgeschlossen!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
