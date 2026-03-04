@@ -1,115 +1,115 @@
 import gradio as gr
 import sqlite3
-import os
 from huggingface_hub import InferenceClient
 from gtts import gTTS
 from PIL import Image
 import io
 
-# SQLite DB (ephemeral)
-DB = "aio_ai.db"
-conn = sqlite3.connect(DB, check_same_thread=False)
+conn = sqlite3.connect("aio_ai.db", check_same_thread=False)
 conn.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
 conn.execute("CREATE TABLE IF NOT EXISTS characters (id INTEGER PRIMARY KEY, username TEXT, name TEXT, prompt TEXT)")
 
 client = InferenceClient()
+username_state = gr.State("")
 
-def register(username, password):
+def register(u, p):
     try:
-        conn.execute("INSERT INTO users VALUES (?, ?)", (username, password))
+        conn.execute("INSERT INTO users VALUES (?, ?)", (u, p))
         conn.commit()
         return "✅ Registriert!"
     except:
         return "❌ Username existiert bereits"
 
-def login(username, password):
-    res = conn.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password)).fetchone()
-    return "✅ Willkommen!" if res else "❌ Falsche Daten"
+def login(u, p):
+    if conn.execute("SELECT * FROM users WHERE username=? AND password=?", (u, p)).fetchone():
+        return "✅ Angemeldet!", u
+    return "❌ Falsche Daten!", ""
 
-def create_character(username, name, system_prompt):
-    conn.execute("INSERT INTO characters (username, name, prompt) VALUES (?, ?, ?)", (username, name, system_prompt))
+def get_characters(u):
+    return [row[0] for row in conn.execute("SELECT name FROM characters WHERE username=?", (u,)).fetchall()] or []
+
+def create_character(u, name, prompt):
+    if not name or not prompt: return "❌ Name + Prompt erforderlich!"
+    conn.execute("INSERT INTO characters (username, name, prompt) VALUES (?, ?, ?)", (u, name, prompt))
     conn.commit()
-    return f"✅ Charakter '{name}' erstellt!"
+    return f"✅ '{name}' erstellt!"
 
-def get_characters(username):
-    return [row[1] for row in conn.execute("SELECT * FROM characters WHERE username=?", (username,)).fetchall()]
+def chat(msg, u, char):
+    if not char: return "Bitte Charakter wählen"
+    p = conn.execute("SELECT prompt FROM characters WHERE username=? AND name=?", (u, char)).fetchone()
+    system = p[0] if p else "Du bist hilfreich."
+    return client.text_generation(f"{system}\n\nUser: {msg}", model="microsoft/Phi-3-mini-4k-instruct", max_new_tokens=600)
 
-def chat(message, username, character_name):
-    chars = conn.execute("SELECT prompt FROM characters WHERE username=? AND name=?", (username, character_name)).fetchone()
-    prompt = chars[0] if chars else "Du bist ein hilfreicher Assistent."
-    full_prompt = f"{prompt}\nUser: {message}"
-    response = client.text_generation(full_prompt, model="microsoft/Phi-3-mini-4k-instruct", max_new_tokens=512)
-    return response
+def gen_image(p):
+    try: return Image.open(io.BytesIO(client.text_to_image(p, model="stabilityai/stable-diffusion-2-1")))
+    except: return None
 
-def generate_image(prompt):
-    img_bytes = client.text_to_image(prompt, model="stabilityai/stable-diffusion-2-1")
-    return Image.open(io.BytesIO(img_bytes))
+def gen_code(p):
+    try: return client.text_generation(f"Schreibe sauberen Code: {p}", model="microsoft/Phi-3-mini-4k-instruct", max_new_tokens=1200)
+    except: return "Fehler"
 
-def generate_code(prompt):
-    full = f"Schreibe sauberen Code für: {prompt}"
-    return client.text_generation(full, model="microsoft/Phi-3-mini-4k-instruct", max_new_tokens=1024)
+def tts(text):
+    try:
+        gTTS(text, lang="de").save("output.mp3")
+        return "output.mp3"
+    except: return None
 
-def text_to_speech(text):
-    tts = gTTS(text, lang="de")
-    tts.save("output.mp3")
-    return "output.mp3"
-
-# Gradio UI
-with gr.Blocks(title="AIO AI") as demo:
+with gr.Blocks(title="AIO AI", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🤖 AIO AI – All-in-One KI Plattform")
-    
+
     with gr.Tab("🔑 Login / Registrierung"):
         with gr.Row():
             with gr.Column():
                 gr.Markdown("### Registrieren")
-                u1 = gr.Textbox(label="Username")
-                p1 = gr.Textbox(label="Passwort", type="password")
-                reg_btn = gr.Button("Registrieren")
-                reg_out = gr.Textbox()
-                reg_btn.click(register, [u1, p1], reg_out)
+                ur = gr.Textbox(label="Username")
+                pr = gr.Textbox(label="Passwort", type="password")
+                btnr = gr.Button("Registrieren", variant="primary")
+                outr = gr.Textbox()
+                btnr.click(register, [ur, pr], outr)
             with gr.Column():
                 gr.Markdown("### Anmelden")
-                u2 = gr.Textbox(label="Username")
-                p2 = gr.Textbox(label="Passwort", type="password")
-                login_btn = gr.Button("Anmelden")
-                login_out = gr.Textbox()
-                login_btn.click(login, [u2, p2], login_out)
-    
+                ul = gr.Textbox(label="Username")
+                pl = gr.Textbox(label="Passwort", type="password")
+                btnl = gr.Button("Anmelden", variant="primary")
+                outl = gr.Textbox()
+                btnl.click(login, [ul, pl], [outl, username_state])
+
     with gr.Tab("👤 Charaktere"):
-        username = gr.Textbox(label="Dein Username", visible=True)
-        name = gr.Textbox(label="Charakter-Name")
-        prompt = gr.Textbox(label="System-Prompt", lines=5)
-        create_btn = gr.Button("Charakter erstellen")
-        create_out = gr.Textbox()
-        create_btn.click(create_character, [username, name, prompt], create_out)
-        
-        char_list = gr.Dropdown(label="Deine Charaktere", choices=[])
-        refresh_btn = gr.Button("Liste aktualisieren")
-        refresh_btn.click(lambda u: get_characters(u), username, char_list)
-    
+        cn = gr.Textbox(label="Charakter-Name")
+        cp = gr.Textbox(label="System-Prompt", lines=4)
+        btnc = gr.Button("Erstellen", variant="primary")
+        outc = gr.Textbox()
+        chardd = gr.Dropdown(label="Deine Charaktere", choices=[], allow_custom_value=True)
+        btnref = gr.Button("Aktualisieren")
+        btnc.click(lambda u,n,p: (create_character(u,n,p), get_characters(u)), [username_state, cn, cp], [outc, chardd])
+        btnref.click(get_characters, username_state, chardd)
+        username_state.change(get_characters, username_state, chardd)
+
     with gr.Tab("💬 Chat"):
-        chat_char = gr.Dropdown(label="Charakter wählen")
-        msg = gr.Textbox(label="Deine Nachricht")
-        chat_btn = gr.Button("Senden")
-        chat_output = gr.Textbox(label="Antwort")
-        chat_btn.click(chat, [msg, username, chat_char], chat_output)
-    
-    with gr.Tab("🖼️ Bildgenerierung"):
-        img_prompt = gr.Textbox(label="Beschreibe das Bild")
-        img_btn = gr.Button("Bild erzeugen")
-        img_output = gr.Image()
-        img_btn.click(generate_image, img_prompt, img_output)
-    
-    with gr.Tab("💻 Code-Generator"):
-        code_prompt = gr.Textbox(label="Was soll der Code tun?")
-        code_btn = gr.Button("Code generieren")
-        code_output = gr.Code(language="python")
-        code_btn.click(generate_code, code_prompt, code_output)
-    
-    with gr.Tab("🔊 Text-to-Speech"):
-        tts_text = gr.Textbox(label="Text zum Vorlesen")
-        tts_btn = gr.Button("Sprache erzeugen")
-        tts_output = gr.Audio()
-        tts_btn.click(text_to_speech, tts_text, tts_output)
+        chatdd = gr.Dropdown(label="Charakter wählen", choices=[], allow_custom_value=True)
+        msg = gr.Textbox(label="Nachricht", lines=2)
+        btnchat = gr.Button("Senden", variant="primary")
+        outchat = gr.Textbox(label="Antwort", lines=8)
+        btnchat.click(chat, [msg, username_state, chatdd], outchat)
+        username_state.change(get_characters, username_state, chatdd)
+        btnref.click(get_characters, username_state, chatdd)
+
+    with gr.Tab("🖼️ Bild"):
+        ip = gr.Textbox(label="Beschreibung")
+        btni = gr.Button("Generieren")
+        outi = gr.Image()
+        btni.click(gen_image, ip, outi)
+
+    with gr.Tab("💻 Code"):
+        cprompt = gr.Textbox(label="Aufgabe")
+        btncode = gr.Button("Generieren")
+        outcode = gr.Code(language="python")
+        btncode.click(gen_code, cprompt, outcode)
+
+    with gr.Tab("🔊 TTS"):
+        ttstext = gr.Textbox(label="Text")
+        btntts = gr.Button("Vorlesen")
+        outtts = gr.Audio()
+        btntts.click(tts, ttstext, outtts)
 
 demo.launch(server_name="0.0.0.0", server_port=7860)
