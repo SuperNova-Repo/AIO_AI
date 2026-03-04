@@ -21,23 +21,29 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Hugging Face Hub
+      - name: Create and activate virtual environment
         run: |
+          python -m venv hf-venv
+          source hf-venv/bin/activate
           python -m pip install --upgrade pip
-          pip install --no-cache-dir huggingface_hub[cli]
 
-      - name: Add pip user bin to PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Install Hugging Face Hub in venv
+        run: |
+          source hf-venv/bin/activate
+          pip install --no-cache-dir huggingface_hub[cli]
 
       - name: Login to Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_ALL_REPOS }}
-        run: huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential=false
+        run: |
+          source hf-venv/bin/activate
+          huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential=false
 
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN_ALL_REPOS }}
         run: |
+          source hf-venv/bin/activate
           huggingface-cli repo-files \
             --repo-type space \
             --repo-id Kostya-Lolinger/AIO_AI \
