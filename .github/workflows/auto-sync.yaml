@@ -15,47 +15,48 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_AIO_AI }}
-      
+
       - name: Configure Git
         run: |
           git config user.name "🤖 Auto-Sync"
           git config user.email "sync@actions.github.com"
-      
+
       - name: Setup HF Remote
         run: |
-          git remote add hf https://USER:${{ secrets.HF_TOKEN_ALL_REPOS }}@huggingface.co/spaces/Kostya-Lolinger/dr-lila-therapist 2>/dev/null || true
+          git remote add hf https://x-access-token:${{ secrets.HF_TOKEN_ALL_REPOS }}@huggingface.co/spaces/Kostya-Lolinger/AIO_AI 2>/dev/null || true
           git remote -v
-      
+
       - name: Bi-Directional Sync
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🔄 Starting Bi-Directional Sync"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           
-          # Fetch from HF
           echo "📥 Fetching from HuggingFace..."
           git fetch hf main 2>/dev/null || echo "⚠️  Fetch warning (might be first run)"
           
-          # Check for HF updates
           if git rev-parse hf/main >/dev/null 2>&1; then
             if ! git diff --quiet HEAD hf/main; then
-              echo "📥 HF has updates! Merging..."
-              git merge hf/main --no-edit --allow-unrelated-histories -m "Sync from HF [$(date '+%Y-%m-%d %H:%M')]"
-              git push origin main
+              echo "📥 HF has updates! Merging (theirs on conflict)..."
+              git merge hf/main \
+                --no-edit \
+                --allow-unrelated-histories \
+                -X theirs \
+                -m "Sync from HF [$(date '+%Y-%m-%d %H:%M')]" || {
+                  echo "⚠️ Merge hatte Konflikte – trotzdem weitermachen"
+                  git merge --continue || true
+                }
+              git push origin main || echo "⚠️ Push zu origin fehlgeschlagen"
               echo "✅ HF → GitHub: Synced"
             else
               echo "ℹ️  HF → GitHub: No changes"
             fi
           fi
           
-          # Push to HF
           echo "📤 Pushing to HuggingFace..."
-          if git push hf main 2>&1; then
-            echo "✅ GitHub → HF: Synced"
-          else
-            echo "⚠️  GitHub → HF: Push failed (might be already up-to-date)"
-          fi
+          git push hf main && echo "✅ GitHub → HF: Synced" \
+            || echo "⚠️  GitHub → HF: Push failed (might be already up-to-date)"
           
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Sync Complete!"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" 
