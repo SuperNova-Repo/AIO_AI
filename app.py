@@ -10,7 +10,6 @@ conn.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, passw
 conn.execute("CREATE TABLE IF NOT EXISTS characters (id INTEGER PRIMARY KEY, username TEXT, name TEXT, prompt TEXT)")
 
 client = InferenceClient()
-username_state = gr.State("")
 
 def register(u, p):
     try:
@@ -26,7 +25,7 @@ def login(u, p):
     return "❌ Falsche Daten!", ""
 
 def get_characters(u):
-    return [row[0] for row in conn.execute("SELECT name FROM characters WHERE username=?", (u,)).fetchall()] or []
+    return [row[0] for row in conn.execute("SELECT name FROM characters WHERE username=?", (u,)).fetchall()] or ["Keine Charaktere"]
 
 def create_character(u, name, prompt):
     if not name or not prompt: return "❌ Name + Prompt erforderlich!"
@@ -35,7 +34,7 @@ def create_character(u, name, prompt):
     return f"✅ '{name}' erstellt!"
 
 def chat(msg, u, char):
-    if not char: return "Bitte Charakter wählen"
+    if not char or char == "Keine Charaktere": return "Bitte Charakter wählen"
     p = conn.execute("SELECT prompt FROM characters WHERE username=? AND name=?", (u, char)).fetchone()
     system = p[0] if p else "Du bist hilfreich."
     return client.text_generation(f"{system}\n\nUser: {msg}", model="microsoft/Phi-3-mini-4k-instruct", max_new_tokens=600)
@@ -54,7 +53,9 @@ def tts(text):
         return "output.mp3"
     except: return None
 
-with gr.Blocks(title="AIO AI", theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="AIO AI") as demo:
+    username_state = gr.State("")
+
     gr.Markdown("# 🤖 AIO AI – All-in-One KI Plattform")
 
     with gr.Tab("🔑 Login / Registrierung"):
@@ -63,15 +64,19 @@ with gr.Blocks(title="AIO AI", theme=gr.themes.Soft()) as demo:
                 gr.Markdown("### Registrieren")
                 ur = gr.Textbox(label="Username")
                 pr = gr.Textbox(label="Passwort", type="password")
+                show_pr = gr.Checkbox(label="👁 Passwort anzeigen")
                 btnr = gr.Button("Registrieren", variant="primary")
                 outr = gr.Textbox()
+                show_pr.change(lambda x: gr.update(type="text" if x else "password"), show_pr, pr)
                 btnr.click(register, [ur, pr], outr)
             with gr.Column():
                 gr.Markdown("### Anmelden")
                 ul = gr.Textbox(label="Username")
                 pl = gr.Textbox(label="Passwort", type="password")
+                show_pl = gr.Checkbox(label="👁 Passwort anzeigen")
                 btnl = gr.Button("Anmelden", variant="primary")
                 outl = gr.Textbox()
+                show_pl.change(lambda x: gr.update(type="text" if x else "password"), show_pl, pl)
                 btnl.click(login, [ul, pl], [outl, username_state])
 
     with gr.Tab("👤 Charaktere"):
@@ -112,4 +117,4 @@ with gr.Blocks(title="AIO AI", theme=gr.themes.Soft()) as demo:
         outtts = gr.Audio()
         btntts.click(tts, ttstext, outtts)
 
-demo.launch(server_name="0.0.0.0", server_port=7860)
+demo.launch(server_name="0.0.0.0", server_port=7860, theme=gr.themes.Soft())
