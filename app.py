@@ -10,11 +10,7 @@ conn = sqlite3.connect("aio_ai.db", check_same_thread=False)
 conn.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
 conn.execute("CREATE TABLE IF NOT EXISTS characters (id INTEGER PRIMARY KEY, username TEXT, name TEXT, prompt TEXT)")
 
-# Token aus HF Space Secret laden
 hf_token = os.getenv("HF_TOKEN")
-if not hf_token:
-    print("WARNUNG: HF_TOKEN Secret fehlt → Chat funktioniert nicht!")
-
 client = InferenceClient(token=hf_token)
 
 def register(u, p):
@@ -48,34 +44,30 @@ def chat(msg, u, char):
 
     p = conn.execute("SELECT prompt FROM characters WHERE username=? AND name=?", (u, char)).fetchone()
     system = p[0] if p else "Du bist hilfreich."
-    full_prompt = f"{system}\n\nUser: {msg}"
-
-    if not hf_token:
-        return "Fehler: HF_TOKEN Secret fehlt. Gehe in Space Settings → Secrets und füge HF_TOKEN hinzu."
+    full_prompt = f"{system}\n\nUser: {msg}\n\nAssistant:"
 
     try:
         return client.text_generation(
             full_prompt,
-            model="mistralai/Mistral-7B-Instruct-v0.3",
+            model="NousResearch/Hermes-3-Llama-3.1-8B",
             max_new_tokens=600,
-            temperature=0.7
+            temperature=0.7,
+            do_sample=True
         )
     except Exception as e:
-        return f"KI-Fehler: {str(e)[:200]}\n\nTipp: Stelle sicher, dass dein HF_TOKEN gültig ist und Rate-Limits nicht überschritten sind."
+        return f"KI-Fehler: {str(e)[:300]}\n\nTipp: Rate-Limit erreicht? Warte 1–2 Minuten oder prüfe HF_TOKEN in den Space-Secrets."
 
 def gen_image(p):
-    if not hf_token:
-        return None
+    if not hf_token: return None
     try:
         return Image.open(io.BytesIO(client.text_to_image(p, model="stabilityai/stable-diffusion-2-1")))
     except:
         return None
 
 def gen_code(p):
-    if not hf_token:
-        return "API-Key fehlt"
+    if not hf_token: return "API-Key fehlt"
     try:
-        return client.text_generation(f"Schreibe sauberen Code: {p}", model="mistralai/Mistral-7B-Instruct-v0.3", max_new_tokens=1200)
+        return client.text_generation(f"Schreibe sauberen Code: {p}", model="NousResearch/Hermes-3-Llama-3.1-8B", max_new_tokens=1200)
     except:
         return "Fehler bei Code-Generierung"
 
@@ -90,6 +82,7 @@ with gr.Blocks(title="AIO AI") as demo:
     username_state = gr.State("")
 
     gr.Markdown("# 🤖 AIO AI – All-in-One KI Plattform")
+    gr.Markdown("**Hinweis:** Bei 'KI-Fehler' oder langsamer Antwort → Rate-Limit von Hugging Face erreicht. Warte kurz oder versuche später erneut.")
 
     with gr.Tab("🔑 Login / Registrierung"):
         with gr.Row():
