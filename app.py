@@ -9,7 +9,8 @@ conn = sqlite3.connect("aio_ai.db", check_same_thread=False)
 conn.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
 conn.execute("CREATE TABLE IF NOT EXISTS characters (id INTEGER PRIMARY KEY, username TEXT, name TEXT, prompt TEXT)")
 
-client = InferenceClient()
+# FIX: expliziter Provider + stabiles Free-Tier-Modell (kein StopIteration mehr)
+client = InferenceClient(provider="hf-inference")
 
 def register(u, p):
     try:
@@ -34,28 +35,40 @@ def create_character(u, name, prompt):
     return f"✅ '{name}' erstellt!"
 
 def chat(msg, u, char):
-    # FIX: char kann Liste sein (Gradio-Dropdown-Verhalten)
     if isinstance(char, list):
         char = char[0] if char else ""
     if not char or char == "Keine Charaktere":
         return "Bitte Charakter wählen"
     p = conn.execute("SELECT prompt FROM characters WHERE username=? AND name=?", (u, char)).fetchone()
     system = p[0] if p else "Du bist hilfreich."
-    return client.text_generation(f"{system}\n\nUser: {msg}", model="microsoft/Phi-3-mini-4k-instruct", max_new_tokens=600)
+    try:
+        return client.text_generation(
+            f"{system}\n\nUser: {msg}",
+            model="Qwen/Qwen2.5-0.5B-Instruct",   # stabiles Free-Tier-Modell
+            max_new_tokens=600,
+            temperature=0.7
+        )
+    except Exception as e:
+        return f"Fehler bei KI-Antwort: {str(e)[:200]}"
 
 def gen_image(p):
-    try: return Image.open(io.BytesIO(client.text_to_image(p, model="stabilityai/stable-diffusion-2-1")))
-    except: return None
+    try:
+        return Image.open(io.BytesIO(client.text_to_image(p, model="stabilityai/stable-diffusion-2-1")))
+    except:
+        return None
 
 def gen_code(p):
-    try: return client.text_generation(f"Schreibe sauberen Code: {p}", model="microsoft/Phi-3-mini-4k-instruct", max_new_tokens=1200)
-    except: return "Fehler"
+    try:
+        return client.text_generation(f"Schreibe sauberen Code: {p}", model="Qwen/Qwen2.5-0.5B-Instruct", max_new_tokens=1200)
+    except:
+        return "Fehler bei Code-Generierung"
 
 def tts(text):
     try:
         gTTS(text, lang="de").save("output.mp3")
         return "output.mp3"
-    except: return None
+    except:
+        return None
 
 with gr.Blocks(title="AIO AI") as demo:
     username_state = gr.State("")
