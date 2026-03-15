@@ -12,7 +12,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="AiO AI"/>
   <link rel="apple-touch-icon" href="assets/favico.png"/>
-  <!-- puter.js and marked.js loaded dynamically on demand -->
+  <!-- Puter.js MUST be loaded as blocking script (no defer) for auth to work -->
+  <script src="https://js.puter.com/v2/puter.js"></script>
   <style>
     :root{
       --bg-100:hsl(30,3.3%,11.8%);--bg-200:hsl(30,3%,14%);--bg-300:hsl(30,3%,18%);--bg-400:hsl(30,3%,22%);
@@ -1472,7 +1473,7 @@ function loadScript(src){
 }
 
 // Start loading puter.js immediately — track with a promise
-const _puterLoadPromise = loadScript('https://js.puter.com/v2/');
+const _puterLoadPromise = loadScript('https://js.puter.com/v2/puter.js');
 const _markedLoadPromise = loadScript('https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js');
 
 // Helper: wait for puter.js to be ready (resolves instantly if already loaded)
