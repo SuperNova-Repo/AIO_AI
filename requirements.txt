@@ -1,4 +1,0 @@
-gradio>=4.0
-huggingface_hub
-gtts
-pillow
