@@ -12,12 +12,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="AiO AI"/>
   <link rel="apple-touch-icon" href="assets/favico.png"/>
-  <!-- DEBUG: Puter.js load tracking -->
-  <script>window._puterStart=Date.now();console.log('[AiO] Loading Puter.js...');</script>
-  <!-- Puter.js MUST be loaded as blocking script (no defer) for auth to work -->
-  <script src="https://js.puter.com/v2/puter.js" 
-          onerror="console.error('[AiO] ❌ Puter.js FAILED to load!')"
-          onload="console.log('[AiO] ✅ Puter.js loaded in '+(Date.now()-window._puterStart)+'ms')"></script>
+  <script src="https://js.puter.com/v2/"></script>
   <script defer src="/_vercel/insights/script.js"></script>
   <style>
     :root{
@@ -40,7 +35,7 @@
 
     /* ══════ LOADING ══════ */
     #loading{position:fixed;inset:0;z-index:400;background:var(--bg-100);
-      display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+      display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
     .ld-logo{width:56px;height:56px;object-fit:contain;border-radius:12px}
     .ld-fb{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),hsl(15,70%,45%));
       border-radius:12px;display:none;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff}
@@ -60,10 +55,39 @@
     .auth-puter-btn:active{transform:scale(.98)}
     .auth-puter-btn:disabled{opacity:.5;cursor:not-allowed}
     .auth-hint{font-size:11.5px;color:var(--text-500);text-align:center;line-height:1.6;margin-top:4px}
+    #protocol-notice{font-size:12px;text-align:center;margin-bottom:10px;min-height:16px;line-height:1.5}
+    /* ── WebView-spezifische Auth-UI ── */
+    .wv-auth-box{
+      width:100%;background:var(--bg-300);border:1px solid var(--border);
+      border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;
+    }
+    .wv-step{display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--text-300);line-height:1.5}
+    .wv-step-num{
+      width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;
+      font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;margin-top:1px;
+    }
+    .wv-step.done .wv-step-num{background:hsl(140,55%,45%)}
+    .wv-divider{height:1px;background:var(--border);margin:2px 0}
+    .wv-btn{
+      width:100%;border:none;border-radius:9px;padding:10px;
+      font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      transition:background .15s,transform .1s;
+    }
+    .wv-btn:active{transform:scale(.97)}
+    .wv-btn:disabled{opacity:.5;cursor:not-allowed}
+    .wv-btn.primary{background:hsl(217,90%,55%);color:#fff}
+    .wv-btn.primary:hover:not(:disabled){background:hsl(217,90%,48%)}
+    .wv-btn.secondary{background:var(--bg-400);color:var(--text-200);border:1px solid var(--border)}
+    .wv-btn.secondary:hover:not(:disabled){background:var(--bg-300);color:var(--text-100)}
+    .wv-btn.danger{background:transparent;color:hsl(0,65%,62%);border:1px solid hsl(0,40%,30%);font-size:12px;padding:8px}
+    .wv-btn.danger:hover:not(:disabled){background:hsl(0,30%,16%)}
+    .wv-cookie-hint{font-size:11px;color:var(--text-500);text-align:center;line-height:1.5}
 
     /* ══════ AUTH ══════ */
     #auth{position:fixed;inset:0;z-index:300;background:var(--bg-100);
-      display:flex;align-items:center;justify-content:center;padding:20px}
+      display:none;align-items:center;justify-content:center;padding:20px}
     #auth::before{content:'';position:absolute;inset:0;pointer-events:none;
       background-image:linear-gradient(to right,var(--bg-200) 1px,transparent 1px),
         linear-gradient(to bottom,var(--bg-200) 1px,transparent 1px);
@@ -734,15 +758,89 @@
     <h1 class="auth-title">AiO AI</h1>
     <p class="auth-sub" data-i18n="auth.sub">Melde dich an, um zu starten</p>
     <div id="auth-err"></div>
-    <button class="auth-puter-btn" id="puter-auth-btn" onclick="doPuterLogin()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
-        <polyline points="10 17 15 12 10 7"/>
-        <line x1="15" y1="12" x2="3" y2="12"/>
-      </svg>
-      <span data-i18n="auth.puterBtn">Mit Puter anmelden 🔑</span>
-    </button>
-    <p class="auth-hint" data-i18n="auth.hint">Kostenlos · Kein Passwort erforderlich · Powered by Puter</p>
+    <div id="protocol-notice"></div>
+
+    <!-- Standard-Auth (Desktop / normaler Browser) -->
+    <div id="auth-standard">
+      <button class="auth-puter-btn" id="puter-auth-btn" onclick="doPuterLogin()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        <span data-i18n="auth.puterBtn">Mit Puter anmelden</span>
+      </button>
+      <p class="auth-hint" data-i18n="auth.hint">Kostenlos · Kein Passwort erforderlich · Powered by Puter</p>
+    </div>
+
+    <!-- WebView-Auth (Android / Appilix) -->
+    <div id="auth-webview" style="display:none;width:100%">
+      <div class="wv-auth-box">
+
+        <!-- Anleitung -->
+        <div style="font-size:12.5px;color:var(--text-300);text-align:center;line-height:1.6;margin-bottom:2px">
+          Da der Browser aus der App heraus nicht direkt geöffnet werden kann,<br>
+          öffne die Seite manuell im Browser deines Geräts:
+        </div>
+
+        <!-- QR-Code -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <img id="wv-qr-img"
+            style="width:160px;height:160px;border-radius:8px;background:#fff;padding:8px;display:block"
+            alt="QR-Code wird geladen…"/>
+          <div style="font-size:11px;color:var(--text-500)">📷 QR-Code mit Kamera-App scannen</div>
+        </div>
+
+        <!-- URL anzeigen + kopieren -->
+        <div style="width:100%">
+          <div id="wv-url-display"
+            style="font-size:11.5px;color:hsl(210,80%,65%);text-align:center;
+                   padding:8px 10px;background:var(--bg-400);border-radius:7px;
+                   word-break:break-all;line-height:1.5;cursor:pointer;
+                   border:1px solid var(--border)"
+            onclick="wvCopyUrl()" title="Tippen zum Kopieren"></div>
+          <button class="wv-btn secondary" style="margin-top:6px" onclick="wvCopyUrl()" id="wv-copy-btn">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M7 3a2 2 0 00-2 2v9a2 2 0 002 2h7a2 2 0 002-2V5a2 2 0 00-2-2H7zm0 1.5h7a.5.5 0 01.5.5v9a.5.5 0 01-.5.5H7a.5.5 0 01-.5-.5V5a.5.5 0 01.5-.5zM4 2a2 2 0 00-2 2v9a.75.75 0 001.5 0V4a.5.5 0 01.5-.5h7a.75.75 0 000-1.5H4z"/>
+            </svg>
+            URL kopieren
+          </button>
+        </div>
+
+        <div class="wv-divider"></div>
+
+        <!-- Nach der Anmeldung -->
+        <div class="wv-step">
+          <div class="wv-step-num">✓</div>
+          <div style="font-size:12.5px;color:var(--text-300)">
+            <strong style="color:var(--text-100)">Nach der Anmeldung im Browser:</strong><br>
+            Zurück zur App wechseln und hier tippen.
+          </div>
+        </div>
+        <button class="wv-btn primary" id="wv-retry-btn" onclick="wvRetryAuth()">
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M4 10a6 6 0 1110.89-3H13a1 1 0 100 2h4a1 1 0 001-1V4a1 1 0 10-2 0v1.93A8 8 0 102 10a1 1 0 102 0z"/>
+          </svg>
+          Ich habe mich angemeldet – fortfahren
+        </button>
+
+        <div class="wv-divider"></div>
+
+        <!-- Cookie-Reset -->
+        <div class="wv-cookie-hint">
+          Anmeldeprobleme? Puter-Cookies im Browser löschen.<br>
+          Auf puter.com: 🔒 → Website-Einstellungen → Daten löschen
+        </div>
+        <button class="wv-btn danger" onclick="wvClearLocalAuth()">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zm0 2h2l.5 1H8.5L9 4zm-3 3h8v9H6V7z"/>
+          </svg>
+          Lokale Anmeldedaten löschen
+        </button>
+
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -897,13 +995,6 @@
         <div class="u-name" id="u-name">Laden…</div>
         <div class="u-sub" data-i18n="sb.loggedIn">Angemeldet</div>
       </div>
-      <button class="pwa-sb-btn" id="pwa-sb-btn" onclick="pwaTriggerInstall()">
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z"/>
-          <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/>
-        </svg>
-        Als App installieren
-      </button>
       <button class="logout-btn" id="logout-btn" data-i18n-title="sb.logout" title="Abmelden">
         <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor"><path d="M3 3.5a.5.5 0 01.5-.5h7a.5.5 0 010 1H4v12h6.5a.5.5 0 010 1h-7a.5.5 0 01-.5-.5v-13z"/><path d="M13.35 6.65a.5.5 0 00-.7.7L14.79 9.5H7.5a.5.5 0 000 1h7.29l-2.14 2.15a.5.5 0 00.7.7l3-3a.5.5 0 000-.7l-3-3z"/></svg>
         Abmelden
@@ -998,7 +1089,6 @@ const STRINGS = {
     'auth.sub':'Melde dich an, um zu starten','auth.puterBtn':'Mit Puter anmelden',
     'auth.hint':'Kostenlos · Kein Passwort erforderlich · Powered by Puter',
     'auth.loading':'Anmelden…','auth.failed':'Anmeldung fehlgeschlagen. Bitte erneut versuchen.',
-    'auth.waitingReturn':'Nach Anmeldung zur App zurueckkehren …',
     'sb.hide':'Sidebar ausblenden','sb.show':'Sidebar einblenden','sb.newChat':'Neuer Chat',
     'sb.history':'Chatverlauf','sb.export':'Exportieren','sb.import':'Importieren',
     'sb.loggedIn':'Angemeldet','sb.logout':'Abmelden','sb.noChats':'Noch keine Chats',
@@ -1037,7 +1127,6 @@ const STRINGS = {
     'auth.sub':'Sign in to get started','auth.puterBtn':'Sign in with Puter',
     'auth.hint':'Free · No password required · Powered by Puter',
     'auth.loading':'Signing in…','auth.failed':'Sign-in failed. Please try again.',
-    'auth.waitingReturn':'Return to app after signing in …',
     'sb.hide':'Hide sidebar','sb.show':'Show sidebar','sb.newChat':'New chat',
     'sb.history':'Chat history','sb.export':'Export','sb.import':'Import',
     'sb.loggedIn':'Signed in','sb.logout':'Sign out','sb.noChats':'No chats yet',
@@ -1076,7 +1165,6 @@ const STRINGS = {
     'auth.sub':'Connectez-vous pour commencer','auth.puterBtn':'Se connecter avec Puter',
     'auth.hint':'Gratuit · Aucun mot de passe requis · Propulsé par Puter',
     'auth.loading':'Connexion…','auth.failed':'Échec de la connexion. Veuillez réessayer.',
-    'auth.waitingReturn':'Revenez dans l\'appli après connexion …',
     'sb.hide':'Masquer la barre latérale','sb.show':'Afficher la barre latérale','sb.newChat':'Nouveau chat',
     'sb.history':'Historique','sb.export':'Exporter','sb.import':'Importer',
     'sb.loggedIn':'Connecté','sb.logout':'Se déconnecter','sb.noChats':'Aucun chat pour l\'instant',
@@ -1115,7 +1203,6 @@ const STRINGS = {
     'auth.sub':'Inicia sesión para comenzar','auth.puterBtn':'Iniciar sesión con Puter',
     'auth.hint':'Gratis · Sin contraseña · Impulsado por Puter',
     'auth.loading':'Iniciando sesión…','auth.failed':'Error al iniciar sesión. Por favor, inténtalo de nuevo.',
-    'auth.waitingReturn':'Regresa a la app tras iniciar sesión …',
     'sb.hide':'Ocultar barra lateral','sb.show':'Mostrar barra lateral','sb.newChat':'Nuevo chat',
     'sb.history':'Historial de chats','sb.export':'Exportar','sb.import':'Importar',
     'sb.loggedIn':'Conectado','sb.logout':'Cerrar sesión','sb.noChats':'Sin chats aún',
@@ -1154,7 +1241,6 @@ const STRINGS = {
     'auth.sub':'Accedi per iniziare','auth.puterBtn':'Accedi con Puter',
     'auth.hint':'Gratuito · Nessuna password richiesta · Powered by Puter',
     'auth.loading':'Accesso in corso…','auth.failed':'Accesso fallito. Riprova.',
-    'auth.waitingReturn':'Torna all\'app dopo l\'accesso …',
     'sb.hide':'Nascondi barra laterale','sb.show':'Mostra barra laterale','sb.newChat':'Nuova chat',
     'sb.history':'Cronologia chat','sb.export':'Esporta','sb.import':'Importa',
     'sb.loggedIn':'Connesso','sb.logout':'Esci','sb.noChats':'Nessuna chat ancora',
@@ -1193,7 +1279,6 @@ const STRINGS = {
     'auth.sub':'Entrar para começar','auth.puterBtn':'Entrar com o Puter',
     'auth.hint':'Grátis · Sem senha necessária · Desenvolvido pelo Puter',
     'auth.loading':'Entrando…','auth.failed':'Falha ao entrar. Por favor, tente novamente.',
-    'auth.waitingReturn':'Volte ao app após entrar …',
     'sb.hide':'Ocultar barra lateral','sb.show':'Mostrar barra lateral','sb.newChat':'Novo chat',
     'sb.history':'Histórico de chats','sb.export':'Exportar','sb.import':'Importar',
     'sb.loggedIn':'Conectado','sb.logout':'Sair','sb.noChats':'Sem chats ainda',
@@ -1232,7 +1317,6 @@ const STRINGS = {
     'auth.sub':'Войдите, чтобы начать','auth.puterBtn':'Войти через Puter',
     'auth.hint':'Бесплатно · Без пароля · Работает на Puter',
     'auth.loading':'Вход…','auth.failed':'Ошибка входа. Попробуйте ещё раз.',
-    'auth.waitingReturn':'Вернитесь в приложение после входа …',
     'sb.hide':'Скрыть панель','sb.show':'Показать панель','sb.newChat':'Новый чат',
     'sb.history':'История чатов','sb.export':'Экспорт','sb.import':'Импорт',
     'sb.loggedIn':'Вы вошли','sb.logout':'Выйти','sb.noChats':'Чатов пока нет',
@@ -1271,7 +1355,6 @@ const STRINGS = {
     'auth.sub':'登录以开始使用','auth.puterBtn':'通过 Puter 登录',
     'auth.hint':'免费 · 无需密码 · 由 Puter 驱动',
     'auth.loading':'登录中…','auth.failed':'登录失败，请重试。',
-    'auth.waitingReturn':'登录后请返回应用 …',
     'sb.hide':'隐藏侧边栏','sb.show':'显示侧边栏','sb.newChat':'新对话',
     'sb.history':'聊天记录','sb.export':'导出','sb.import':'导入',
     'sb.loggedIn':'已登录','sb.logout':'退出登录','sb.noChats':'暂无对话',
@@ -1310,7 +1393,6 @@ const STRINGS = {
     'auth.sub':'ログインして始める','auth.puterBtn':'Puter でログイン',
     'auth.hint':'無料 · パスワード不要 · Puter によって提供',
     'auth.loading':'ログイン中…','auth.failed':'ログインに失敗しました。もう一度お試しください。',
-    'auth.waitingReturn':'ログイン後にアプリに戻ってください …',
     'sb.hide':'サイドバーを非表示','sb.show':'サイドバーを表示','sb.newChat':'新しいチャット',
     'sb.history':'チャット履歴','sb.export':'エクスポート','sb.import':'インポート',
     'sb.loggedIn':'ログイン済み','sb.logout':'ログアウト','sb.noChats':'チャットはまだありません',
@@ -1349,7 +1431,6 @@ const STRINGS = {
     'auth.sub':'Başlamak için giriş yap','auth.puterBtn':'Puter ile giriş yap',
     'auth.hint':'Ücretsiz · Şifre gerekmez · Puter tarafından desteklenmektedir',
     'auth.loading':'Giriş yapılıyor…','auth.failed':'Giriş başarısız. Lütfen tekrar deneyin.',
-    'auth.waitingReturn':'Giriş yaptıktan sonra uygulamaya dönün …',
     'sb.hide':'Kenar çubuğunu gizle','sb.show':'Kenar çubuğunu göster','sb.newChat':'Yeni sohbet',
     'sb.history':'Sohbet geçmişi','sb.export':'Dışa aktar','sb.import':'İçe aktar',
     'sb.loggedIn':'Giriş yapıldı','sb.logout':'Çıkış yap','sb.noChats':'Henüz sohbet yok',
@@ -1459,49 +1540,49 @@ function withTimeout(promise, ms=5000){
   ]);
 }
 
-/* ════════════════════════════════
-   DYNAMIC SCRIPT LOADER
-   Loads puter.js and marked.js on demand
-   so the page renders instantly
-════════════════════════════════ */
-function loadScript(src){
-  return new Promise((resolve, reject)=>{
-    if(document.querySelector('script[src="'+src+'"]')){
-      resolve(); return;
-    }
-    const s = document.createElement('script');
-    s.src = src;
-    s.onload = resolve;
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
+document.addEventListener('DOMContentLoaded', async () => {
+  applyI18n(); // apply language immediately
 
-// Start loading puter.js immediately — track with a promise
-const _puterLoadPromise = loadScript('https://js.puter.com/v2/puter.js');
-const _markedLoadPromise = loadScript('https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js');
+  // Hard fallback: show auth after 3s no matter what
+  const hardFallback = setTimeout(()=>{
+    if(loadingEl.style.display!=='none') showAuth();
+  }, 3000);
 
-// Helper: wait for puter.js to be ready (resolves instantly if already loaded)
-function ensurePuterLoaded(){ return _puterLoadPromise; }
-function ensureMarkedLoaded(){ return _markedLoadPromise; }
-
-/* ════════════════════════════════
-   INIT — script is at bottom of <body>,
-   DOM is already ready, run directly.
-════════════════════════════════ */
-(async () => {
-  // Auth screen is visible by default via CSS — no waiting needed.
-  applyI18n();
-
-  // If user was previously logged in, restore session immediately
+  // 1. Fastest path: locally cached user (no network needed)
   const saved = localLoad('aioai_user');
   if(saved){
-    loadingEl.style.display = 'flex';
-    authEl.style.display    = 'none';
+    clearTimeout(hardFallback);
     await finishLogin(saved);
+    return;
   }
-  // else: auth card already visible via CSS, puter.js loading in bg
-})();
+
+  // 2. Wait up to 2s for Puter SDK to be ready
+  let puterReady = false;
+  for(let i=0; i<20; i++){
+    if(typeof puter !== 'undefined'){ puterReady=true; break; }
+    await sleep(100);
+  }
+
+  if(!puterReady){
+    clearTimeout(hardFallback);
+    showAuth();
+    return;
+  }
+
+  // 3. Check for existing Puter session (fast — 1.5s timeout)
+  try {
+    const isPuterSignedIn = await withTimeout(Promise.resolve(puter.auth.isSignedIn()), 1500);
+    if(isPuterSignedIn){
+      const u = await withTimeout(puter.auth.getUser(), 2000);
+      clearTimeout(hardFallback);
+      await finishLogin({ id: u.uuid||u.username||u.email||'puter', name: u.username||u.name||u.email||'User', email: u.email||'' });
+      return;
+    }
+  } catch(e){}
+
+  clearTimeout(hardFallback);
+  showAuth();
+});
 
 /* ════════════════════════════════
    AUTH
@@ -1522,8 +1603,6 @@ async function finishLogin(user) {
   currentUser=user;
   loadingEl.style.display='flex';
   applyI18n();
-  // Preload marked.js for message rendering
-  ensureMarkedLoaded().catch(()=>{});
   $('u-name').textContent=user.name;
   $('u-avatar').textContent=user.name.charAt(0).toUpperCase();
   await loadSessions();
@@ -1946,7 +2025,7 @@ const LANG_EXT = {
   r:'r',dart:'dart',scala:'scala',lua:'lua',perl:'pl',
 };
 
-function detectLang(el) {
+function detectCodeLang(el) {
   // marked adds class="language-xxx" to <code>
   const cls = el.className||'';
   const m = cls.match(/language-(\w+)/);
@@ -1957,7 +2036,7 @@ function enhanceCodeBlocks(bubble) {
   bubble.querySelectorAll('pre').forEach(pre => {
     const codeEl = pre.querySelector('code');
     if (!pre.parentElement.classList.contains('code-block')) {
-      const lang = codeEl ? detectLang(codeEl) : '';
+      const lang = codeEl ? detectCodeLang(codeEl) : '';
       const ext  = LANG_EXT[lang] || 'txt';
       const code = codeEl ? codeEl.textContent : pre.textContent;
 
@@ -2058,8 +2137,7 @@ function appendBubble(label,text,role,animate=true,historyIndex=-1){
    SPEECH SYNTHESIS (Ausgabe)
 ════════════════════════════════ */
 let currentUtterance = null;
-const isAndroidWebView = /wv/.test(navigator.userAgent) ||
-  (navigator.userAgent.includes('Android') && !navigator.userAgent.includes('Chrome/'));
+// isAndroidWebView is declared in the Auth section above
 
 /* ════════════════════════════════
    VOICE SELECTION
@@ -2477,7 +2555,7 @@ $('import-modal').addEventListener('click', e=>{ if(e.target===$('import-modal')
 /* ════════════════════════════════
    AUTH HELPERS
 ════════════════════════════════ */
-function showAuth(){loadingEl.style.display='none';authEl.style.display='flex';applyI18n();}
+function showAuth(){loadingEl.style.display='none';authEl.style.display='flex';updateProtocolNotice();}
 function showErr(m){authErr.textContent=m;authErr.classList.add('on');}
 function hideErr(){authErr.classList.remove('on');}
 
@@ -2485,135 +2563,145 @@ function hideErr(){authErr.classList.remove('on');}
    PUTER
 ════════════════════════════════ */
 async function ensurePuter(){
-  try {
-    await ensurePuterLoaded();
-    if(typeof puter !== 'undefined' && !puter.auth.isSignedIn())
-      await puter.auth.signIn();
-  } catch(e) {}
+  try { if(typeof puter==='undefined') throw new Error('puter not loaded'); } catch(e){}
 }
 
-/* ════════════════════════════════
-   WEBVIEW RETURN DETECTION
-════════════════════════════════ */
-let _waitingForPuterReturn = false;
-let _puterReturnInterval = null;
+/* ── WebView-Erkennung (Appilix / Android) ── */
+const isAndroidWebView = (function(){
+  const ua = navigator.userAgent || '';
+  return (
+    /wv/.test(ua) ||
+    (/Android/.test(ua) && /; wv\)/.test(ua)) ||
+    (/Android/.test(ua) && /Version\/\d/.test(ua) && !/Chrome\/\d/.test(ua))
+  );
+})();
 
-async function checkPuterSessionAndLogin() {
-  if(currentUser) return;
-  try {
-    await ensurePuterLoaded();
-    if(!puter.auth.isSignedIn()) return;
-    const u = await withTimeout(puter.auth.getUser(), 3000);
-    if(!u) return;
-    const ud = {
-      id: u.uuid||u.username||u.email||'puter_'+Date.now(),
-      name: u.username||u.name||'User',
-      email: u.email||''
+/* ── WebView: QR-Code + URL initialisieren ── */
+function wvInitQR(){
+  const url     = window.location.href.split('?')[0];
+  const urlEl   = $('wv-url-display');
+  const qrImg   = $('wv-qr-img');
+  // URL anzeigen
+  if(urlEl) urlEl.textContent = url;
+  // QR via Google Charts API (kein externe JS-Lib nötig)
+  if(qrImg){
+    const qrUrl = 'https://chart.googleapis.com/chart?chs=180x180&cht=qr&chld=M|2&chl='
+      + encodeURIComponent(url);
+    qrImg.src = qrUrl;
+    qrImg.onerror = () => {
+      // Fallback: QR.io API
+      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='
+        + encodeURIComponent(url);
     };
-    localSave('aioai_user', ud);
-    stopWaitingForPuterReturn();
-    await finishLogin(ud);
-  } catch(e){}
-}
-
-function startWaitingForPuterReturn() {
-  if(_waitingForPuterReturn) return;
-  _waitingForPuterReturn = true;
-  let tries = 0;
-  _puterReturnInterval = setInterval(async () => {
-    tries++;
-    if(tries > 200 || currentUser){ stopWaitingForPuterReturn(); return; }
-    await checkPuterSessionAndLogin();
-  }, 1500);
-}
-
-function stopWaitingForPuterReturn() {
-  _waitingForPuterReturn = false;
-  if(_puterReturnInterval){ clearInterval(_puterReturnInterval); _puterReturnInterval = null; }
-  const btn = $('puter-auth-btn');
-  if(btn && !currentUser){
-    btn.disabled = false;
-    const sp = btn.querySelector('span');
-    if(sp) sp.textContent = t('auth.puterBtn');
   }
 }
 
-// When WebView/tab becomes visible again after external auth
-document.addEventListener('visibilitychange', async () => {
-  if(document.visibilityState === 'visible' && !currentUser)
-    await checkPuterSessionAndLogin();
-});
-window.addEventListener('focus', async () => {
-  if(!currentUser) await checkPuterSessionAndLogin();
-});
-window.addEventListener('pageshow', async () => {
-  if(!currentUser) await checkPuterSessionAndLogin();
-});
+/* ── WebView: URL in Zwischenablage kopieren ── */
+async function wvCopyUrl(){
+  const url = window.location.href.split('?')[0];
+  const btn = $('wv-copy-btn');
+  try {
+    await navigator.clipboard.writeText(url);
+    if(btn){ const orig = btn.innerHTML; btn.innerHTML = '✅'; setTimeout(()=>{ btn.innerHTML = orig; }, 2000); }
+  } catch(e){
+    // Fallback: selectAll auf dem URL-Element
+    const el = $('wv-url-display');
+    if(el){
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    if(btn){ btn.innerHTML = '📋 Markiert'; setTimeout(()=>{ btn.innerHTML = '📋'; }, 2000); }
+  }
+}
 
-function doPuterLogin(){
-  console.log('[AiO] 🔐 doPuterLogin called');
-  const btn = $('puter-auth-btn');
-  const sp  = btn ? btn.querySelector('span') : null;
-  
-  if(!btn){console.error('[AiO] ❌ Button not found!');return;}
-  
-  btn.disabled = true;
-  if(sp) sp.textContent = t('auth.loading');
+/* ── WebView: Lokale Anmeldedaten löschen ── */
+function wvClearLocalAuth(){
+  localRemove('aioai_user');
+  showErr('Lokale Anmeldedaten gelöscht. Bitte erneut über den Browser anmelden.');
+}
+
+/* ── WebView: Nach Browser-Login → Puter-Session prüfen ── */
+async function wvRetryAuth(){
+  const btn = $('wv-retry-btn');
   hideErr();
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Überprüfe Anmeldung…'; }
+  try {
+    let ud = null;
+    try {
+      const signedIn = await withTimeout(Promise.resolve(puter.auth.isSignedIn()), 2000);
+      if(signedIn){
+        const u = await withTimeout(puter.auth.getUser(), 3000);
+        ud = { id: u.uuid||u.username||u.email||'puter_'+Date.now(), name: u.username||u.name||u.email||'Nutzer', email: u.email||'' };
+      }
+    } catch(e){}
+    if(!ud){
+      const res = await withTimeout(puter.ai.chat('hi', { model:'claude-haiku-4-5' }), 6000);
+      if(!res || res.success === false) throw new Error('no response');
+      try {
+        const u = await withTimeout(puter.auth.getUser(), 3000);
+        ud = { id: u.uuid||u.username||u.email||'puter_'+Date.now(), name: u.username||u.name||u.email||'Nutzer', email: u.email||'' };
+      } catch(e){ ud = { id:'puter_'+Date.now(), name:'Nutzer', email:'' }; }
+    }
+    localSave('aioai_user', ud);
+    await finishLogin(ud);
+  } catch(err){
+    showErr('Anmeldung fehlgeschlagen. Bitte zuerst im Browser anmelden (QR-Code scannen oder URL kopieren).');
+    if(btn){
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a7 7 0 100 14A7 7 0 0010 3zm0 12.5a5.5 5.5 0 110-11 5.5 5.5 0 010 11zm.75-8.25a.75.75 0 00-1.5 0v3.25l1.97 1.97a.75.75 0 001.06-1.06L10.75 9.69V7.25z"/></svg> Bereits angemeldet – fortfahren';
+    }
+  }
+}
 
-  // Check if puter is loaded
-  if(typeof puter === 'undefined'){
-    console.warn('[AiO] ⚠️  Puter not loaded yet, waiting...');
-    ensurePuterLoaded()
-      .then(()=>{
-        console.log('[AiO] ✅ Puter loaded, please click again');
-        if(btn){ btn.disabled=false; if(sp) sp.textContent=t('auth.puterBtn'); }
-      })
-      .catch((err)=>{ 
-        console.error('[AiO] ❌ Puter load failed:', err);
-        showErr(t('auth.failed')); 
-        if(btn){ btn.disabled=false; } 
-      });
+/* ── Protokoll-Hinweis + WebView-UI umschalten ── */
+function updateProtocolNotice(){
+  const el  = $('protocol-notice');
+  const std = $('auth-standard');
+  const wv  = $('auth-webview');
+  if(isAndroidWebView){
+    if(el)  el.innerHTML = '📱 <strong style="color:hsl(38,90%,60%)">Android WebView (Appilix) erkannt</strong>';
+    if(std) std.style.display = 'none';
+    if(wv)  wv.style.display  = 'block';
+    wvInitQR();
     return;
   }
+  if(std) std.style.display = 'block';
+  if(wv)  wv.style.display  = 'none';
+  if(!el) return;
+  const proto = window.location.protocol;
+  const host  = window.location.hostname;
+  if(proto === 'file:'){
+    el.innerHTML = '✅ <strong style="color:hsl(140,60%,55%)">Datei-Modus:</strong> <span style="color:var(--text-300)">Authentifizierung sollte problemlos funktionieren.</span>';
+  } else if(host === 'localhost' || host === '127.0.0.1'){
+    el.innerHTML = '⚠️ <strong style="color:hsl(38,90%,60%)">Lokaler Server:</strong> <span style="color:var(--text-300)">Falls Auth fehlschlägt, Browserprofil-Einstellungen prüfen.</span>';
+  } else {
+    el.innerHTML = '🌐 <strong style="color:hsl(210,80%,65%)">Web-Modus:</strong> <span style="color:var(--text-300)">Stelle sicher, dass Popups für diese Domain erlaubt sind.</span>';
+  }
+}
 
-  console.log('[AiO] ✅ Puter is ready, checking auth object...');
-  
-  // Verify puter.auth exists
-  if(!puter.auth || !puter.auth.signIn){
-    console.error('[AiO] ❌ puter.auth.signIn not available!', puter);
-    showErr('Puter API nicht verfügbar. Bitte Seite neu laden.');
+/* ── Standard-Auth (Desktop / Chrome-Browser) ── */
+async function doPuterLogin(){
+  const btn = $('puter-auth-btn');
+  const sp  = btn?.querySelector('span');
+  if(btn){ btn.disabled=true; if(sp) sp.textContent=t('auth.loading'); }
+  hideErr();
+  try {
+    const res = await puter.ai.chat('hi', { model:'claude-haiku-4-5' });
+    if(!res || res.success === false) throw new Error('no response');
+    let ud = { id:'puter_'+Date.now(), name:'Nutzer', email:'' };
+    try {
+      const u = await withTimeout(puter.auth.getUser(), 3000);
+      ud = { id: u.uuid||u.username||u.email||'puter_'+Date.now(), name: u.username||u.name||u.email||'Nutzer', email: u.email||'' };
+    } catch(e){}
+    localSave('aioai_user', ud);
+    await finishLogin(ud);
+  } catch(e){
+    showErr(t('auth.failed'));
     if(btn){ btn.disabled=false; if(sp) sp.textContent=t('auth.puterBtn'); }
-    return;
   }
-
-  console.log('[AiO] 🚀 Calling puter.auth.signIn()...');
-  
-  // puter IS ready → call signIn() immediately (no await = gesture preserved)
-  puter.auth.signIn()
-    .then(()=> {
-      console.log('[AiO] ✅ signIn successful, getting user...');
-      return puter.auth.getUser();
-    })
-    .then(u => {
-      console.log('[AiO] ✅ Got user:', u);
-      if(!u) throw new Error('no user');
-      const ud = {
-        id:    u.uuid||u.username||u.email||'puter_'+Date.now(),
-        name:  u.username||u.name||'User',
-        email: u.email||''
-      };
-      localSave('aioai_user', ud);
-      console.log('[AiO] ✅ User saved, finishing login...');
-      return finishLogin(ud);
-    })
-    .catch((err)=>{
-      console.error('[AiO] ❌ Auth error:', err);
-      // Popup was blocked (WebView) or user closed it
-      // → show hint and poll for session when user returns
-      if(sp) sp.textContent = t('auth.waitingReturn');
-      startWaitingForPuterReturn();
-    });
 }
 
 /* ════════════════════════════════
@@ -2710,37 +2798,6 @@ function fmtDate(ts){
     }catch(e){}
   }
 })();
-
-// ════ DEBUG: Verify Puter.js and function availability ════
-console.log('[AiO] 🔍 Final checks:');
-console.log('[AiO] - typeof puter:', typeof puter);
-console.log('[AiO] - typeof doPuterLogin:', typeof doPuterLogin);
-console.log('[AiO] - puter.auth exists:', typeof puter !== 'undefined' && !!puter.auth);
-if(typeof puter !== 'undefined' && puter.auth){
-  console.log('[AiO] ✅ Puter.js is READY for authentication');
-}else{
-  console.error('[AiO] ❌ Puter.js NOT ready!');
-}
-
-// ════ Extra safety: Direct event listener on auth button ════
-(function(){
-  const btn = document.getElementById('puter-auth-btn');
-  if(btn){
-    console.log('[AiO] ✅ Found auth button, adding direct event listener');
-    btn.addEventListener('click', function(e){
-      console.log('[AiO] 🖱️  Auth button clicked (direct listener)');
-      if(typeof doPuterLogin === 'function'){
-        e.preventDefault(); // Prevent any default behavior
-        doPuterLogin();
-      }else{
-        console.error('[AiO] ❌ doPuterLogin is not a function!');
-      }
-    });
-  }else{
-    console.warn('[AiO] ⚠️  Auth button not found in DOM');
-  }
-})();
-
 </script>
 
 <!-- ════ PWA INSTALL BAR ════ -->
