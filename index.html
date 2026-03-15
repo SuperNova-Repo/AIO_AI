@@ -12,8 +12,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="AiO AI"/>
   <link rel="apple-touch-icon" href="assets/favico.png"/>
+  <!-- DEBUG: Puter.js load tracking -->
+  <script>window._puterStart=Date.now();console.log('[AiO] Loading Puter.js...');</script>
   <!-- Puter.js MUST be loaded as blocking script (no defer) for auth to work -->
-  <script src="https://js.puter.com/v2/puter.js"></script>
+  <script src="https://js.puter.com/v2/puter.js" 
+          onerror="console.error('[AiO] ❌ Puter.js FAILED to load!')"
+          onload="console.log('[AiO] ✅ Puter.js loaded in '+(Date.now()-window._puterStart)+'ms')"></script>
   <script defer src="/_vercel/insights/script.js"></script>
   <style>
     :root{
@@ -2547,27 +2551,52 @@ window.addEventListener('pageshow', async () => {
 });
 
 function doPuterLogin(){
+  console.log('[AiO] 🔐 doPuterLogin called');
   const btn = $('puter-auth-btn');
   const sp  = btn ? btn.querySelector('span') : null;
-  if(btn) btn.disabled = true;
+  
+  if(!btn){console.error('[AiO] ❌ Button not found!');return;}
+  
+  btn.disabled = true;
   if(sp) sp.textContent = t('auth.loading');
   hideErr();
 
-  // If puter.js isn't ready yet, wait then ask user to tap again
+  // Check if puter is loaded
   if(typeof puter === 'undefined'){
+    console.warn('[AiO] ⚠️  Puter not loaded yet, waiting...');
     ensurePuterLoaded()
       .then(()=>{
+        console.log('[AiO] ✅ Puter loaded, please click again');
         if(btn){ btn.disabled=false; if(sp) sp.textContent=t('auth.puterBtn'); }
       })
-      .catch(()=>{ showErr(t('auth.failed')); if(btn){ btn.disabled=false; } });
+      .catch((err)=>{ 
+        console.error('[AiO] ❌ Puter load failed:', err);
+        showErr(t('auth.failed')); 
+        if(btn){ btn.disabled=false; } 
+      });
     return;
   }
 
+  console.log('[AiO] ✅ Puter is ready, checking auth object...');
+  
+  // Verify puter.auth exists
+  if(!puter.auth || !puter.auth.signIn){
+    console.error('[AiO] ❌ puter.auth.signIn not available!', puter);
+    showErr('Puter API nicht verfügbar. Bitte Seite neu laden.');
+    if(btn){ btn.disabled=false; if(sp) sp.textContent=t('auth.puterBtn'); }
+    return;
+  }
+
+  console.log('[AiO] 🚀 Calling puter.auth.signIn()...');
+  
   // puter IS ready → call signIn() immediately (no await = gesture preserved)
-  // Mobile browsers block popups if there's an await before window.open()
   puter.auth.signIn()
-    .then(()=> puter.auth.getUser())
+    .then(()=> {
+      console.log('[AiO] ✅ signIn successful, getting user...');
+      return puter.auth.getUser();
+    })
     .then(u => {
+      console.log('[AiO] ✅ Got user:', u);
       if(!u) throw new Error('no user');
       const ud = {
         id:    u.uuid||u.username||u.email||'puter_'+Date.now(),
@@ -2575,9 +2604,11 @@ function doPuterLogin(){
         email: u.email||''
       };
       localSave('aioai_user', ud);
+      console.log('[AiO] ✅ User saved, finishing login...');
       return finishLogin(ud);
     })
-    .catch(()=>{
+    .catch((err)=>{
+      console.error('[AiO] ❌ Auth error:', err);
       // Popup was blocked (WebView) or user closed it
       // → show hint and poll for session when user returns
       if(sp) sp.textContent = t('auth.waitingReturn');
@@ -2677,6 +2708,36 @@ function fmtDate(ts){
       const b=new Blob([sw],{type:'application/javascript'});
       navigator.serviceWorker.register(URL.createObjectURL(b),{scope:'./'}).catch(()=>{});
     }catch(e){}
+  }
+})();
+
+// ════ DEBUG: Verify Puter.js and function availability ════
+console.log('[AiO] 🔍 Final checks:');
+console.log('[AiO] - typeof puter:', typeof puter);
+console.log('[AiO] - typeof doPuterLogin:', typeof doPuterLogin);
+console.log('[AiO] - puter.auth exists:', typeof puter !== 'undefined' && !!puter.auth);
+if(typeof puter !== 'undefined' && puter.auth){
+  console.log('[AiO] ✅ Puter.js is READY for authentication');
+}else{
+  console.error('[AiO] ❌ Puter.js NOT ready!');
+}
+
+// ════ Extra safety: Direct event listener on auth button ════
+(function(){
+  const btn = document.getElementById('puter-auth-btn');
+  if(btn){
+    console.log('[AiO] ✅ Found auth button, adding direct event listener');
+    btn.addEventListener('click', function(e){
+      console.log('[AiO] 🖱️  Auth button clicked (direct listener)');
+      if(typeof doPuterLogin === 'function'){
+        e.preventDefault(); // Prevent any default behavior
+        doPuterLogin();
+      }else{
+        console.error('[AiO] ❌ doPuterLogin is not a function!');
+      }
+    });
+  }else{
+    console.warn('[AiO] ⚠️  Auth button not found in DOM');
   }
 })();
 
