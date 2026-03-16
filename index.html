@@ -5,16 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>AiO AI</title>
   <link rel="icon" href="assets/favico.png" type="image/png"/>
-  <link rel="manifest" href="manifest.json"/>
+  <!-- Inline-Manifest vermeidet 404 auf InfinityFreeApp -->
+  <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22AiO%20AI%22%2C%22short_name%22%3A%22AiO%20AI%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%231e1b18%22%2C%22theme_color%22%3A%22%231e1b18%22%7D"/>
   <meta name="theme-color" content="#1e1b18"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="AiO AI"/>
   <link rel="apple-touch-icon" href="assets/favico.png"/>
+  <!-- Anti-Bot-URL-Cleanup: entfernt ?i=1/?i=2 von InfinityFreeApp -->
+  <script>
+    (function(){
+      var u = window.location.href;
+      if(/[?&]i=\d/.test(u)){
+        // Saubere URL ohne den Anti-Bot-Parameter
+        var clean = u.replace(/[?&]i=\d+/g,'').replace(/[?&]$/, '').replace(/\?&/, '?');
+        window.history.replaceState(null,'',clean||'/');
+      }
+    })();
+  </script>
   <!-- Pollinations.ai – kein API-Key nötig -->
   <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
-  <script defer src="/_vercel/insights/script.js"></script>
+
   <style>
     :root{
       --bg-100:hsl(30,3.3%,11.8%);--bg-200:hsl(30,3%,14%);--bg-300:hsl(30,3%,18%);--bg-400:hsl(30,3%,22%);
@@ -2561,9 +2573,8 @@ function fmtDate(ts){
 
   // Service Worker: caches local assets only, skips ALL external origins
   if('serviceWorker' in navigator){
-    const _origin = location.origin;
     const sw = "const C='aioai-v2',O='"+location.origin+"';"
-      + "self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['./','./assets/favico.png']).catch(()=>{})));self.skipWaiting();});"
+      + "self.addEventListener('install',e=>{self.skipWaiting();});"
       + "self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==C).map(n=>caches.delete(n)))));self.clients.claim();});"
       + "self.addEventListener('fetch',e=>{"
       + "if(e.request.method!=='GET')return;"
