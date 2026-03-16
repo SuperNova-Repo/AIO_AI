@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="AiO AI"/>
   <link rel="apple-touch-icon" href="assets/favico.png"/>
-  <script src="https://js.puter.com/v2/"></script>
+  <!-- Pollinations.ai – kein API-Key nötig -->
   <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
   <script defer src="/_vercel/insights/script.js"></script>
   <style>
@@ -757,93 +757,20 @@
          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
     <div class="auth-logo-fb">A</div>
     <h1 class="auth-title">AiO AI</h1>
-    <p class="auth-sub" data-i18n="auth.sub">Melde dich an, um zu starten</p>
+    <p class="auth-sub">Keine Anmeldung erforderlich – kostenlos &amp; direkt starten</p>
     <div id="auth-err"></div>
     <div id="protocol-notice"></div>
 
-    <!-- Standard-Auth (Desktop / normaler Browser) -->
+    <!-- Standard-Auth (kein Login nötig – Pollinations.ai) -->
     <div id="auth-standard">
       <button class="auth-puter-btn" id="puter-auth-btn" onclick="doPuterLogin()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
-          <polyline points="10 17 15 12 10 7"/>
-          <line x1="15" y1="12" x2="3" y2="12"/>
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
         </svg>
-        <span data-i18n="auth.puterBtn">Mit Puter anmelden</span>
+        <span>Jetzt loslegen – kostenlos starten</span>
       </button>
-      <p class="auth-hint" data-i18n="auth.hint">Kostenlos · Kein Passwort erforderlich · Powered by Puter</p>
+      <p class="auth-hint">Kostenlos · Kein Login · Powered by Pollinations.ai</p>
     </div>
-
-    <!-- WebView-Auth (Android / Appilix) -->
-    <div id="auth-webview" style="display:none;width:100%">
-      <div class="wv-auth-box">
-
-        <!-- Anleitung -->
-        <div style="font-size:12.5px;color:var(--text-300);text-align:center;line-height:1.6;margin-bottom:2px">
-          Da der Browser aus der App heraus nicht direkt geöffnet werden kann,<br>
-          öffne die Seite manuell im Browser deines Geräts:
-        </div>
-
-        <!-- QR-Code -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-          <img id="wv-qr-img"
-            style="width:160px;height:160px;border-radius:8px;background:#fff;padding:8px;display:block"
-            alt="QR-Code wird geladen…"/>
-          <div style="font-size:11px;color:var(--text-500)">📷 QR-Code mit Kamera-App scannen</div>
-        </div>
-
-        <!-- URL anzeigen + kopieren -->
-        <div style="width:100%">
-          <div id="wv-url-display"
-            style="font-size:11.5px;color:hsl(210,80%,65%);text-align:center;
-                   padding:8px 10px;background:var(--bg-400);border-radius:7px;
-                   word-break:break-all;line-height:1.5;cursor:pointer;
-                   border:1px solid var(--border)"
-            onclick="wvCopyUrl()" title="Tippen zum Kopieren"></div>
-          <button class="wv-btn secondary" style="margin-top:6px" onclick="wvCopyUrl()" id="wv-copy-btn">
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M7 3a2 2 0 00-2 2v9a2 2 0 002 2h7a2 2 0 002-2V5a2 2 0 00-2-2H7zm0 1.5h7a.5.5 0 01.5.5v9a.5.5 0 01-.5.5H7a.5.5 0 01-.5-.5V5a.5.5 0 01.5-.5zM4 2a2 2 0 00-2 2v9a.75.75 0 001.5 0V4a.5.5 0 01.5-.5h7a.75.75 0 000-1.5H4z"/>
-            </svg>
-            URL kopieren
-          </button>
-        </div>
-
-        <div class="wv-divider"></div>
-
-        <!-- Nach der Anmeldung -->
-        <div class="wv-step">
-          <div class="wv-step-num">✓</div>
-          <div style="font-size:12.5px;color:var(--text-300)">
-            <strong style="color:var(--text-100)">Nach der Anmeldung im Browser:</strong><br>
-            Zurück zur App wechseln und hier tippen.
-          </div>
-        </div>
-        <button class="wv-btn primary" id="wv-retry-btn" onclick="wvRetryAuth()">
-          <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M4 10a6 6 0 1110.89-3H13a1 1 0 100 2h4a1 1 0 001-1V4a1 1 0 10-2 0v1.93A8 8 0 102 10a1 1 0 102 0z"/>
-          </svg>
-          Ich habe mich angemeldet – fortfahren
-        </button>
-
-        <div class="wv-divider"></div>
-
-        <!-- Cookie-Reset -->
-        <div class="wv-cookie-hint">
-          Anmeldeprobleme? Puter-Cookies im Browser löschen.<br>
-          Auf puter.com: 🔒 → Website-Einstellungen → Daten löschen
-        </div>
-        <button class="wv-btn danger" onclick="wvClearLocalAuth()">
-          <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zm0 2h2l.5 1H8.5L9 4zm-3 3h8v9H6V7z"/>
-          </svg>
-          Lokale Anmeldedaten löschen
-        </button>
-
-      </div>
-    </div>
-
-  </div>
-</div>
 
 <!-- ════ SYSTEM PROMPT MODAL ════ -->
 <div class="modal-backdrop" id="sys-modal">
@@ -1044,11 +971,12 @@
               <div class="model-wrap">
                 <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--text-400)"><circle cx="10" cy="10" r="7"/><path stroke-linecap="round" d="M10 6.5v3.5l2 2"/></svg>
                 <select id="model-sel">
-                  <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
-                  <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
-                  <option value="gpt-4o">GPT-4o</option>
-                  <option value="gpt-4o-mini">GPT-4o mini</option>
-                  <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                  <option value="openai">GPT-4o</option>
+                  <option value="openai-large">GPT-4o Large</option>
+                  <option value="mistral">Mistral Small</option>
+                  <option value="mistral-large">Mistral Large</option>
+                  <option value="llama">Llama 3.1 70B</option>
+                  <option value="deepseek">DeepSeek</option>
                 </select>
               </div>
               <div style="display:flex;align-items:center;gap:4px">
@@ -1509,7 +1437,7 @@ let chatHistory   = [];
 let sessions      = [];
 let activeSession = null;
 
-const KV_KEY = () => `aioai_v2_${currentUser.id}`;
+const KV_KEY = () => `aioai_v2_local`;
 
 /* ════════════════════════════════
    DOM
@@ -1542,47 +1470,14 @@ function withTimeout(promise, ms=5000){
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  applyI18n(); // apply language immediately
-
-  // Hard fallback: show auth after 3s no matter what
-  const hardFallback = setTimeout(()=>{
-    if(loadingEl.style.display!=='none') showAuth();
-  }, 3000);
-
-  // 1. Fastest path: locally cached user (no network needed)
+  applyI18n();
+  // Pollinations.ai – kein Login erforderlich, direkt starten
   const saved = localLoad('aioai_user');
   if(saved){
-    clearTimeout(hardFallback);
     await finishLogin(saved);
-    return;
-  }
-
-  // 2. Wait up to 2s for Puter SDK to be ready
-  let puterReady = false;
-  for(let i=0; i<20; i++){
-    if(typeof puter !== 'undefined'){ puterReady=true; break; }
-    await sleep(100);
-  }
-
-  if(!puterReady){
-    clearTimeout(hardFallback);
+  } else {
     showAuth();
-    return;
   }
-
-  // 3. Check for existing Puter session (fast — 1.5s timeout)
-  try {
-    const isPuterSignedIn = await withTimeout(Promise.resolve(puter.auth.isSignedIn()), 1500);
-    if(isPuterSignedIn){
-      const u = await withTimeout(puter.auth.getUser(), 2000);
-      clearTimeout(hardFallback);
-      await finishLogin({ id: u.uuid||u.username||u.email||'puter', name: u.username||u.name||u.email||'User', email: u.email||'' });
-      return;
-    }
-  } catch(e){}
-
-  clearTimeout(hardFallback);
-  showAuth();
 });
 
 /* ════════════════════════════════
@@ -1590,9 +1485,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 ════════════════════════════════ */
 
 $('logout-btn').addEventListener('click',async()=>{
-  if(!confirm(t('msg.logoutConfirm'))) return;
+  if(!confirm('Lokale Daten löschen und neu starten?')) return;
   localRemove('aioai_user');
-  try{await puter.auth.signOut();}catch(e){}
   currentUser=null;sessions=[];chatHistory=[];activeSession=null;
   appEl.classList.remove('on'); showAuth();
 });
@@ -1619,14 +1513,13 @@ async function finishLogin(user) {
 ════════════════════════════════ */
 async function loadSessions() {
   try {
-    await ensurePuter();
-    const raw = await withTimeout(puter.kv.get(KV_KEY()), 5000);
+    const raw = localStorage.getItem(KV_KEY());
     sessions = raw ? JSON.parse(raw) : [];
   } catch(e) { sessions = []; }
 }
 
 async function saveSessions() {
-  try { await withTimeout(puter.kv.set(KV_KEY(), JSON.stringify(sessions)), 5000); } catch(e){}
+  try { localStorage.setItem(KV_KEY(), JSON.stringify(sessions)); } catch(e){}
 }
 
 function getActiveSession() {
@@ -1953,10 +1846,8 @@ async function sendMessage() {
   const wantsImage=IMG_GEN_RE.test(sentText);
 
   try {
-    await ensurePuter();
-
     if(wantsImage){
-      // ── Image generation via puter.ai.txt2img ──
+      // ── Bildgenerierung via Pollinations.ai ──
       typEl.remove();
       const genGroup=document.createElement('div'); genGroup.className='msg-group';
       const genLabel=document.createElement('div'); genLabel.className='msg-label'; genLabel.textContent='AiO AI';
@@ -1965,13 +1856,18 @@ async function sendMessage() {
       genBub.innerHTML='<span style="color:var(--text-400);font-size:13px">🎨 Bild wird generiert…</span>';
       chatWrap.scrollTop=chatWrap.scrollHeight;
       try{
-        const imgEl=await puter.ai.txt2img(sentText||'abstract art');
-        const imgSrc=imgEl?.src||imgEl;
+        const prompt=encodeURIComponent(sentText||'abstract art');
+        const seed=Math.floor(Math.random()*99999);
+        const imgSrc=`https://image.pollinations.ai/prompt/${prompt}?width=768&height=512&seed=${seed}&nologo=true`;
+        // pre-load to detect errors
+        await new Promise((res,rej)=>{
+          const img=new Image(); img.onload=res; img.onerror=rej; img.src=imgSrc;
+        });
         genBub.innerHTML='';
         const w=document.createElement('div'); w.className='gen-img-wrap';
         w.innerHTML=`<img src="${imgSrc}" alt="Generiertes Bild">
           <span class="gen-img-caption">Generiert für: "${esc((sentText||'').slice(0,60))}"</span>
-          <a class="media-dl-btn" href="${imgSrc}" download="generated_image.png">
+          <a class="media-dl-btn" href="${imgSrc}" download="generated_image.png" target="_blank">
             <svg width="11" height="11" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a.75.75 0 01.75.75v8.69l2.47-2.47a.75.75 0 111.06 1.06l-3.75 3.75a.75.75 0 01-1.06 0L5.72 10.03a.75.75 0 111.06-1.06L9.25 11.44V2.75A.75.75 0 0110 2z"/><path d="M3 15.25a.75.75 0 011.5 0v.25h11v-.25a.75.75 0 011.5 0v.25A1.5 1.5 0 0115.5 17h-11A1.5 1.5 0 013 15.5v-.25z"/></svg>
             Bild herunterladen
           </a>`;
@@ -1982,25 +1878,24 @@ async function sendMessage() {
         genBub.textContent='⚠ Bildgenerierung fehlgeschlagen: '+(imgErr.message||imgErr);
       }
     } else {
-      // ── Normal text/vision chat ──
+      // ── Text-Chat via Pollinations.ai ──
       const s=getActiveSession();
       let apiMessages=[...chatHistory];
       if(s&&s.systemPrompt) apiMessages=[{role:'system',content:s.systemPrompt},...chatHistory];
-      const res=await puter.ai.chat(apiMessages,{model:modelSel.value,stream:false});
+
+      const resp = await fetch('https://text.pollinations.ai/', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          messages: apiMessages,
+          model: modelSel.value,
+          seed: Math.floor(Math.random()*99999),
+          private: true
+        })
+      });
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      const reply = (await resp.text()).trim() || t('msg.noAnswer');
       typEl.remove();
-      let reply='';
-      if(typeof res==='string') reply=res;
-      else if(res?.message?.content){
-        const c=res.message.content;
-        if(Array.isArray(c)) reply=c.map(x=>x?.text||x?.content||'').join('');
-        else reply=String(c);
-      } else if(res?.content){
-        const c=res.content;
-        if(Array.isArray(c)) reply=c.map(x=>x?.text||'').join('');
-        else reply=String(c);
-      } else if(res?.text) reply=res.text;
-      else reply=String(res);
-      if(!reply.trim()) reply=t('msg.noAnswer');
       chatHistory.push({role:'assistant',content:reply});
       appendBubble(t('chat.ai'),reply,'assistant');
     }
@@ -2258,6 +2153,7 @@ function speakText(rawText, btn){
     window.speechSynthesis.speak(utter);
 
     // Android WebView 15s-Pause-Bug: regelmäßig pause+resume
+    const isAndroidWebView = /wv/.test(navigator.userAgent);
     if(isAndroidWebView){
       const iv=setInterval(()=>{
         if(!window.speechSynthesis.speaking){ clearInterval(iv); return; }
@@ -2419,25 +2315,17 @@ async function rerunFromIndex(hidx, newText, group){
   const typEl=appendTyping();
   chatWrap.scrollTop=chatWrap.scrollHeight;
   try {
-    await ensurePuter();
     const s=getActiveSession();
     let apiMessages=[...chatHistory];
     if(s&&s.systemPrompt) apiMessages=[{role:'system',content:s.systemPrompt},...chatHistory];
-    const res=await puter.ai.chat(apiMessages,{model:modelSel.value,stream:false});
+    const resp = await fetch('https://text.pollinations.ai/', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ messages: apiMessages, model: modelSel.value, private: true })
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const reply = (await resp.text()).trim() || t('msg.noAnswer');
     typEl.remove();
-    let reply='';
-    if(typeof res==='string') reply=res;
-    else if(res?.message?.content){
-      const c=res.message.content;
-      if(Array.isArray(c)) reply=c.map(x=>x?.text||x?.content||'').join('');
-      else reply=String(c);
-    } else if(res?.content){
-      const c=res.content;
-      if(Array.isArray(c)) reply=c.map(x=>x?.text||'').join('');
-      else reply=String(c);
-    } else if(res?.text) reply=res.text;
-    else reply=String(res);
-    if(!reply.trim()) reply=t('msg.noAnswer');
     chatHistory.push({role:'assistant',content:reply});
     appendBubble(t('chat.ai'),reply,'assistant');
     updateActiveSession();
@@ -2561,261 +2449,22 @@ function showErr(m){authErr.textContent=m;authErr.classList.add('on');}
 function hideErr(){authErr.classList.remove('on');}
 
 /* ════════════════════════════════
-   PUTER
+   POLLINATIONS.AI – kein API-Key
 ════════════════════════════════ */
-async function ensurePuter(){
-  try { if(typeof puter==='undefined') throw new Error('puter not loaded'); } catch(e){}
-}
-
-/* ── WebView-Erkennung (Appilix / Android) ── */
-const isAndroidWebView = (function(){
-  const ua = navigator.userAgent || '';
-  return (
-    /wv/.test(ua) ||
-    (/Android/.test(ua) && /; wv\)/.test(ua)) ||
-    (/Android/.test(ua) && /Version\/\d/.test(ua) && !/Chrome\/\d/.test(ua))
-  );
-})();
-
-/* ── WebView: QR-Code + URL initialisieren ── */
-function wvInitQR(){
-  const url     = window.location.href.split('?')[0];
-  const urlEl   = $('wv-url-display');
-  const qrImg   = $('wv-qr-img');
-  // URL anzeigen
-  if(urlEl) urlEl.textContent = url;
-  // QR via Google Charts API (kein externe JS-Lib nötig)
-  if(qrImg){
-    const qrUrl = 'https://chart.googleapis.com/chart?chs=180x180&cht=qr&chld=M|2&chl='
-      + encodeURIComponent(url);
-    qrImg.src = qrUrl;
-    qrImg.onerror = () => {
-      // Fallback: QR.io API
-      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='
-        + encodeURIComponent(url);
-    };
-  }
-}
-
-/* ── WebView: URL in Zwischenablage kopieren ── */
-async function wvCopyUrl(){
-  const url = window.location.href.split('?')[0];
-  const btn = $('wv-copy-btn');
-  try {
-    await navigator.clipboard.writeText(url);
-    if(btn){ const orig = btn.innerHTML; btn.innerHTML = '✅'; setTimeout(()=>{ btn.innerHTML = orig; }, 2000); }
-  } catch(e){
-    // Fallback: selectAll auf dem URL-Element
-    const el = $('wv-url-display');
-    if(el){
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    }
-    if(btn){ btn.innerHTML = '📋 Markiert'; setTimeout(()=>{ btn.innerHTML = '📋'; }, 2000); }
-  }
-}
-
-/* ── WebView: Lokale Anmeldedaten löschen ── */
-function wvClearLocalAuth(){
-  localRemove('aioai_user');
-  showErr('Lokale Anmeldedaten gelöscht. Bitte erneut über den Browser anmelden.');
-}
-
-/* ── WebView: Nach Browser-Login → Puter-Session prüfen ── */
-async function wvRetryAuth(){
-  const btn = $('wv-retry-btn');
-  hideErr();
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ Überprüfe Anmeldung…'; }
-  try {
-    let ud = null;
-    try {
-      const signedIn = await withTimeout(Promise.resolve(puter.auth.isSignedIn()), 2000);
-      if(signedIn){
-        const u = await withTimeout(puter.auth.getUser(), 3000);
-        ud = { id: u.uuid||u.username||u.email||'puter_'+Date.now(), name: u.username||u.name||u.email||'Nutzer', email: u.email||'' };
-      }
-    } catch(e){}
-    if(!ud){
-      const res = await withTimeout(puter.ai.chat('hi', { model:'claude-haiku-4-5' }), 6000);
-      if(!res || res.success === false) throw new Error('no response');
-      try {
-        const u = await withTimeout(puter.auth.getUser(), 3000);
-        ud = { id: u.uuid||u.username||u.email||'puter_'+Date.now(), name: u.username||u.name||u.email||'Nutzer', email: u.email||'' };
-      } catch(e){ ud = { id:'puter_'+Date.now(), name:'Nutzer', email:'' }; }
-    }
-    localSave('aioai_user', ud);
-    await finishLogin(ud);
-  } catch(err){
-    showErr('Anmeldung fehlgeschlagen. Bitte zuerst im Browser anmelden (QR-Code scannen oder URL kopieren).');
-    if(btn){
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a7 7 0 100 14A7 7 0 0010 3zm0 12.5a5.5 5.5 0 110-11 5.5 5.5 0 010 11zm.75-8.25a.75.75 0 00-1.5 0v3.25l1.97 1.97a.75.75 0 001.06-1.06L10.75 9.69V7.25z"/></svg> Bereits angemeldet – fortfahren';
-    }
-  }
-}
-
-/* ── Protokoll-Hinweis + WebView-UI umschalten ── */
-function updateProtocolNotice(){
-  const el  = $('protocol-notice');
-  const std = $('auth-standard');
-  const wv  = $('auth-webview');
-  if(isAndroidWebView){
-    if(el)  el.innerHTML = '📱 <strong style="color:hsl(38,90%,60%)">Android WebView (Appilix) erkannt</strong>';
-    if(std) std.style.display = 'none';
-    if(wv)  wv.style.display  = 'block';
-    wvInitQR();
-    return;
-  }
-  if(std) std.style.display = 'block';
-  if(wv)  wv.style.display  = 'none';
-  if(!el) return;
-  const proto = window.location.protocol;
-  const host  = window.location.hostname;
-  if(proto === 'file:'){
-    el.innerHTML = '✅ <strong style="color:hsl(140,60%,55%)">Datei-Modus:</strong> <span style="color:var(--text-300)">Authentifizierung sollte problemlos funktionieren.</span>';
-  } else if(host === 'localhost' || host === '127.0.0.1'){
-    el.innerHTML = '⚠️ <strong style="color:hsl(38,90%,60%)">Lokaler Server:</strong> <span style="color:var(--text-300)">Falls Auth fehlschlägt, Browserprofil-Einstellungen prüfen.</span>';
-  } else {
-    el.innerHTML = '🌐 <strong style="color:hsl(210,80%,65%)">Web-Modus:</strong> <span style="color:var(--text-300)">Stelle sicher, dass Popups für diese Domain erlaubt sind.</span>';
-  }
-}
-
-/* ── Standard-Auth (Desktop / Chrome-Browser) ── */
-async function doPuterLogin(){
-  const btn = $('puter-auth-btn');
-  const sp  = btn?.querySelector('span');
-  if(btn){ btn.disabled=true; if(sp) sp.textContent=t('auth.loading'); }
-  hideErr();
-  try {
-    const res = await puter.ai.chat('hi', { model:'claude-haiku-4-5' });
-    if(!res || res.success === false) throw new Error('no response');
-    let ud = { id:'puter_'+Date.now(), name:'Nutzer', email:'' };
-    try {
-      const u = await withTimeout(puter.auth.getUser(), 3000);
-      ud = { id: u.uuid||u.username||u.email||'puter_'+Date.now(), name: u.username||u.name||u.email||'Nutzer', email: u.email||'' };
-    } catch(e){}
-    localSave('aioai_user', ud);
-    await finishLogin(ud);
-  } catch(e){
-    showErr(t('auth.failed'));
-    if(btn){ btn.disabled=false; if(sp) sp.textContent=t('auth.puterBtn'); }
-  }
-}
+async function ensurePuter(){ /* no-op – Pollinations.ai braucht keine Auth */ }
 
 /* ════════════════════════════════
-   PUTER AUTH - STANDALONE FUNCTIONS
+   AUTH HELPERS
 ════════════════════════════════ */
-function updateProtocolNotice() {
-    const protocolNotice = document.getElementById('protocolNotice');
-    if (protocolNotice) {
-        if (window.location.protocol === 'file:') {
-            protocolNotice.innerHTML = '✅ <strong>File-Modus:</strong> Authentifizierung sollte hier perfekt funktionieren!';
-            protocolNotice.style.color = '#22c55e';
-        } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            protocolNotice.innerHTML = '⚠️ <strong>Server-Modus:</strong> Falls Auth fehlschlägt, sind wahrscheinlich Browser-Profil-Probleme die Ursache. Siehe Anleitung unten.';
-            protocolNotice.style.color = '#f59e0b';
-        } else {
-            protocolNotice.innerHTML = '🌐 <strong>Web-Modus:</strong> Stellen Sie sicher, dass Popups für diese Domain erlaubt sind.';
-            protocolNotice.style.color = '#3b82f6';
-        }
-    }
-}
+function showAuth(){loadingEl.style.display='none';authEl.style.display='flex';}
+function showErr(m){authErr.textContent=m;authErr.classList.add('on');}
+function hideErr(){authErr.classList.remove('on');}
 
-async function handleManualAuth() {
-    const authButton = document.getElementById('authButton');
-    const statusMessage = document.getElementById('statusMessage');
-    
-    try {
-        if (authButton) {
-            authButton.textContent = '🔄 Authentifiziere...';
-            authButton.disabled = true;
-        }
-        
-        statusMessage.style.display = 'none';
-        statusMessage.classList.remove('success', 'error');
-        
-        console.log('🔐 Manuelles Triggern der Puter-Authentifizierung...');
-        
-        // Trigger authentication with a simple test call
-        const authResponse = await puter.ai.chat("test", {model: 'claude-sonnet-4'});
-        
-        console.log('✅ Rohe Auth-Antwort:', authResponse);
-
-        // Check for a successful response structure
-        if (authResponse && (authResponse.message?.content || authResponse.success !== false)) {
-             console.log('✅ Authentifizierung erfolgreich!');
-            if (authButton) {
-                authButton.textContent = '✅ Authentifiziert';
-                authButton.style.backgroundColor = '#22c55e';
-            }
-            
-            statusMessage.textContent = '✅ Authentifizierung erfolgreich! Sie können jetzt die Puter.js API verwenden.';
-            statusMessage.classList.add('success');
-            statusMessage.style.display = 'block';
-            
-        } else {
-            throw new Error('Authentifizierungs-Antwort zeigt Fehler an.');
-        }
-        
-    } catch (error) {
-        console.error('❌ Manuelle Authentifizierung fehlgeschlagen:', error);
-        
-        if (authButton) {
-            authButton.textContent = '❌ Auth fehlgeschlagen - Versuchen Sie die Anleitung';
-            authButton.disabled = false;
-            authButton.style.backgroundColor = '#dc2626';
-        }
-        
-        statusMessage.textContent = '❌ Authentifizierung fehlgeschlagen! Siehe Problemlösung unten.';
-        statusMessage.classList.add('error');
-        statusMessage.style.display = 'block';
-        
-        // --- ENHANCED ERROR MESSAGE ---
-        const troubleshootGuide = `
-⚠️ AUTHENTIFIZIERUNG FEHLGESCHLAGEN!
-
-Das passiert normalerweise wegen Browser-Profil-Einstellungen (Erweiterungen, Cache, etc.), NICHT wegen eines Code-Fehlers.
-
-Wie Sie bemerkt haben, funktioniert es in einem neuen Gast- oder Inkognito-Profil. So beheben Sie es in Ihrem HAUPT-Profil:
-
---- PROBLEMLÖSUNGS-ANLEITUNG ---
-
-✅ SCHNELLSTE LÖSUNG (ZUERST VERSUCHEN):
-1.  🥷 Inkognito-/Privater Modus verwenden:
-    • Drücken Sie Strg+Shift+N (Chrome/Edge) oder Strg+Shift+P (Firefox).
-    • Öffnen Sie diese HTML-Datei dort. Das ist der schnellste Workaround.
-
-🔧 UM IHR HAUPT-PROFIL ZU REPARIEREN (IN DIESER REIHENFOLGE VERSUCHEN):
-2.  🔌 Erweiterungen deaktivieren:
-    • Gehen Sie zu Ihrer Browser-Erweiterungsseite (z.B. chrome://extensions).
-    • TEMPORÄR ALLE Erweiterungen deaktivieren, besonders Ad-Blocker (uBlock, AdBlock) und Privacy-Blocker.
-    • Aktualisieren Sie diese Seite und versuchen Sie erneut zu authentifizieren.
-
-3.  🧹 Site-Daten für Puter löschen:
-    • Gehen Sie zu puter.com, klicken Sie auf das 🔒 Symbol in der Adressleiste -> Site-Einstellungen/Cookies und Site-Daten -> Daten löschen.
-    • Aktualisieren Sie diese Seite und versuchen Sie es erneut.
-
-4.  🍪 Third-Party-Cookies erlauben:
-    • Gehen Sie zu Ihren Browser-Cookie-Einstellungen (z.B. chrome://settings/cookies).
-    • Stellen Sie sicher, dass "Third-Party-Cookies blockieren" NICHT aktiviert ist, oder fügen Sie "[*.]puter.com" zur Erlaubt-Liste hinzu.
-
-Falls Sie dies von einem lokalen Server (wie localhost) ausführen, ist das Problem fast sicher durch Erweiterungen oder Cookie-Einstellungen verursacht.
-`;
-        alert(troubleshootGuide);
-    }
-}
-
-function initializeInterface() {
-    const authButton = document.getElementById('authButton');
-
-    if (authButton) {
-        authButton.addEventListener('click', handleManualAuth);
-    }
-
-    console.log('✅ Interface initialisiert');
+/* ── Direkt-Login ohne Auth ── */
+async function doPuterLogin(){
+  const ud = { id:'local_'+Date.now(), name:'Gast', email:'' };
+  localSave('aioai_user', ud);
+  await finishLogin(ud);
 }
 
 /* ════════════════════════════════
@@ -2849,12 +2498,6 @@ function fmtDate(ts){
 /* ════════════════════════════════
    PUTER AUTH INITIALIZATION
 ════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Puter.js Auth Interface wird initialisiert...');
-    initializeInterface();
-    updateProtocolNotice();
-});
-
 /* ════════════════════════════════
    PWA INSTALL
 ════════════════════════════════ */
