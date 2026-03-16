@@ -771,7 +771,21 @@
 
     <!-- Standard-Auth (kein Login nötig – Pollinations.ai) -->
     <div id="auth-standard">
-      <button class="auth-puter-btn" id="puter-auth-btn" onclick="doPuterLogin()">
+      <button class="auth-puter-btn" id="puter-auth-btn" onclick="
+        console.log('Klick!');
+        var a=document.getElementById('auth');
+        var p=document.getElementById('app');
+        var l=document.getElementById('loading');
+        if(a) a.style.cssText='display:none!important';
+        if(l) l.style.cssText='display:none!important';
+        if(p) p.style.cssText='display:flex!important;height:100vh;overflow:hidden';
+        console.log('App sichtbar?', p ? p.style.display : 'element fehlt');
+        try {
+          var ud={id:'local_'+Date.now(),name:'Gast',email:''};
+          localStorage.setItem('aioai_user',JSON.stringify(ud));
+          if(typeof finishLogin==='function') finishLogin(ud);
+        } catch(e){ console.error(e); }
+      ">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
         </svg>
@@ -1583,11 +1597,14 @@ function withTimeout(promise, ms=5000){
   try { applyI18n(); } catch(e) {}
 
   /* ── App starten ── */
+  console.log('initApp startet');
   try {
     const saved = localLoad('aioai_user');
+    console.log('Gespeicherter User:', saved ? saved.name : 'keiner');
     if (saved) { await finishLogin(saved); }
     else { showAuth(); }
   } catch(e) {
+    console.error('initApp Fehler:', e);
     showAuth();
   }
 
@@ -1597,26 +1614,31 @@ function withTimeout(promise, ms=5000){
    FINISH LOGIN
 ════════════════════════════════ */
 async function finishLogin(user) {
+  console.log('finishLogin aufgerufen für:', user.name);
   try {
     currentUser = user;
-    // Auth sofort ausblenden, App sofort einblenden
-    authEl.style.display = 'none';
-    appEl.classList.add('on');
+    // Auth & Loading per inline-style verstecken (!important überschreibt alles)
+    document.getElementById('auth').style.cssText    = 'display:none!important';
+    document.getElementById('loading').style.cssText = 'display:none!important';
+    // App per inline-style einblenden
+    document.getElementById('app').style.cssText     = 'display:flex!important;height:100vh;overflow:hidden';
+    console.log('App sollte jetzt sichtbar sein');
     // Nutzerdaten setzen
-    const nameEl = $('u-name');
+    const nameEl   = $('u-name');
     const avatarEl = $('u-avatar');
-    if(nameEl) nameEl.textContent = user.name;
+    if(nameEl)   nameEl.textContent   = user.name;
     if(avatarEl) avatarEl.textContent = user.name.charAt(0).toUpperCase();
-    // Sessions aus localStorage laden (synchron, kein Spinner nötig)
+    // Sessions laden
     await loadSessions();
-    applyI18n();
+    try { applyI18n(); } catch(e){}
     renderSidebarHistory();
-    try { msgInput.focus(); } catch(e) {}
+    try { msgInput && msgInput.focus(); } catch(e) {}
   } catch(e) {
-    console.warn('finishLogin error:', e);
-    // Notfall: App trotzdem zeigen
-    authEl.style.display = 'none';
-    appEl.classList.add('on');
+    console.error('finishLogin Fehler:', e);
+    // Letzter Ausweg
+    document.getElementById('auth').style.cssText    = 'display:none!important';
+    document.getElementById('loading').style.cssText = 'display:none!important';
+    document.getElementById('app').style.cssText     = 'display:flex!important;height:100vh;overflow:hidden';
   }
 }
 
@@ -2522,14 +2544,18 @@ async function ensurePuter(){ /* no-op – Pollinations.ai braucht keine Auth */
 
 /* ── Direkt-Login ohne Auth ── */
 async function doPuterLogin(){
+  console.log('doPuterLogin aufgerufen');
   try {
     const ud = { id:'local_'+Date.now(), name:'Gast', email:'' };
     localSave('aioai_user', ud);
+    console.log('User gespeichert, finishLogin wird aufgerufen');
     await finishLogin(ud);
   } catch(e) {
-    if(loadingEl) loadingEl.style.display = 'none';
-    if(authEl)    authEl.style.display = 'none';
-    if(appEl)     appEl.classList.add('on');
+    console.error('doPuterLogin Fehler:', e);
+    // Notfall: App direkt per inline-style einblenden
+    document.getElementById('auth').style.cssText = 'display:none!important';
+    document.getElementById('loading').style.cssText = 'display:none!important';
+    document.getElementById('app').style.cssText = 'display:flex!important;height:100vh';
   }
 }
 
