@@ -1442,21 +1442,14 @@ const KV_KEY = () => `aioai_v2_local`;
 /* ════════════════════════════════
    DOM
 ════════════════════════════════ */
-const $  = id => document.getElementById(id);
-const loadingEl  = $('loading');
-const authEl     = $('auth');
-const appEl      = $('app');
-const sidebar    = $('sidebar');
-const chatContent= $('chat-content');
-const chatWrap   = $('chat-wrap');
-const welcome    = $('welcome');
-const msgInput   = $('msg-input');
-const sendBtn    = $('send-btn');
-const modelSel   = $('model-sel');
-const histList   = $('hist-list');
-const authErr    = $('auth-err');
-const sysModal   = $('sys-modal');
-const sysInput   = $('sys-prompt-input');
+/* ════════════════════════════════
+   DOM
+════════════════════════════════ */
+const $ = id => document.getElementById(id);
+// DOM refs – assigned in initApp() after DOMContentLoaded
+let loadingEl, authEl, appEl, sidebar, chatContent, chatWrap,
+    welcome, msgInput, sendBtn, modelSel, histList, authErr,
+    sysModal, sysInput, attachBtn, fileInput, attachPreview;
 
 /* ════════════════════════════════
    INIT
@@ -1470,35 +1463,79 @@ function withTimeout(promise, ms=5000){
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+  /* ── DOM refs zuweisen ── */
+  loadingEl     = $('loading');
+  authEl        = $('auth');
+  appEl         = $('app');
+  sidebar       = $('sidebar');
+  chatContent   = $('chat-content');
+  chatWrap      = $('chat-wrap');
+  welcome       = $('welcome');
+  msgInput      = $('msg-input');
+  sendBtn       = $('send-btn');
+  modelSel      = $('model-sel');
+  histList      = $('hist-list');
+  authErr       = $('auth-err');
+  sysModal      = $('sys-modal');
+  sysInput      = $('sys-prompt-input');
+  attachBtn     = $('attach-btn');
+  fileInput     = $('file-input');
+  attachPreview = $('attach-preview');
+
+  /* ── Event-Listener ── */
+  $('logout-btn')?.addEventListener('click', async () => {
+    if (!confirm('Lokale Daten löschen und neu starten?')) return;
+    localRemove('aioai_user');
+    currentUser = null; sessions = []; chatHistory = []; activeSession = null;
+    appEl.classList.remove('on'); showAuth();
+  });
+  $('toggle-sb')?.addEventListener('click', toggleSidebar);
+  $('sb-float-toggle')?.addEventListener('click', toggleSidebar);
+  $('btn-new-chat')?.addEventListener('click', newChat);
+  $('sys-modal')?.addEventListener('click', e => { if (e.target === sysModal) closeSysModal(); });
+  $('voice-modal')?.addEventListener('click', e => { if (e.target === $('voice-modal')) closeVoiceModal(); });
+  $('import-modal')?.addEventListener('click', e => { if (e.target === $('import-modal')) closeImportModal(); });
+  $('import-file')?.addEventListener('change', handleImportFile);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSysModal(); });
+
+  msgInput?.addEventListener('input', () => {
+    msgInput.style.height = 'auto';
+    msgInput.style.height = Math.min(msgInput.scrollHeight, 200) + 'px';
+    updateSendBtn();
+  });
+  msgInput?.addEventListener('keydown', e => { /* Zeilenumbruch wie normal */ });
+  sendBtn?.addEventListener('click', sendMessage);
+  document.querySelectorAll('.sugg-card').forEach(c => {
+    c.addEventListener('click', () => { msgInput.value = c.dataset.p; msgInput.dispatchEvent(new Event('input')); sendMessage(); });
+  });
+  attachBtn?.addEventListener('click', () => fileInput.click());
+  fileInput?.addEventListener('change', async () => {
+    for (const file of Array.from(fileInput.files)) { await addAttachment(file); }
+    fileInput.value = '';
+    renderAttachPreviews();
+    updateSendBtn();
+  });
+
+  // Mobile: Sidebar beim Start geschlossen
+  if (window.innerWidth <= 640) $('sb-float-toggle')?.classList.add('visible');
+
+  /* ── i18n + Start ── */
   try { applyI18n(); } catch(e) {}
-  // Hard fallback: zeigt Auth-Screen nach 4s, egal was passiert
+
   const hardFallback = setTimeout(() => {
     if (loadingEl && loadingEl.style.display !== 'none') showAuth();
   }, 4000);
+
   try {
     const saved = localLoad('aioai_user');
-    if(saved) {
-      clearTimeout(hardFallback);
-      await finishLogin(saved);
-    } else {
-      clearTimeout(hardFallback);
-      showAuth();
-    }
+    clearTimeout(hardFallback);
+    if (saved) { await finishLogin(saved); }
+    else { showAuth(); }
   } catch(e) {
     clearTimeout(hardFallback);
     showAuth();
   }
-});
-
-/* ════════════════════════════════
-   AUTH
-════════════════════════════════ */
-
-$('logout-btn').addEventListener('click',async()=>{
-  if(!confirm('Lokale Daten löschen und neu starten?')) return;
-  localRemove('aioai_user');
-  currentUser=null;sessions=[];chatHistory=[];activeSession=null;
-  appEl.classList.remove('on'); showAuth();
 });
 
 /* ════════════════════════════════
@@ -1593,14 +1630,6 @@ function toggleSidebar() {
     $('sb-float-toggle').classList.toggle('visible', isHidden);
   }
 }
-$('toggle-sb').addEventListener('click', toggleSidebar);
-$('sb-float-toggle').addEventListener('click', toggleSidebar);
-
-// On mobile: start with sidebar closed, float toggle visible
-if (window.innerWidth <= 640) {
-  $('sb-float-toggle').classList.add('visible');
-}
-
 /* ════════════════════════════════
    LOAD / NEW SESSION
 ════════════════════════════════ */
@@ -1628,11 +1657,6 @@ function newChat() {
   updateSysPromptBtn();
   renderSidebarHistory();
 }
-
-/* ════════════════════════════════
-   NEW CHAT BUTTON
-════════════════════════════════ */
-$('btn-new-chat').addEventListener('click', newChat);
 
 /* ════════════════════════════════
    SYSTEM PROMPT
@@ -1691,29 +1715,10 @@ function renderSysBanner(prompt) {
   chatContent.insertBefore(banner, chatContent.firstChild);
 }
 
-// Close modal on backdrop click
-sysModal.addEventListener('click', e=>{ if(e.target===sysModal) closeSysModal(); });
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeSysModal(); });
-
 /* ════════════════════════════════
    INPUT
 ════════════════════════════════ */
-// Pending attachments: [{type:'image'|'text'|'audio'|'video', name, dataUrl, mimeType, textContent?}]
 let pendingAttachments = [];
-
-msgInput.addEventListener('input',()=>{
-  msgInput.style.height='auto';
-  msgInput.style.height=Math.min(msgInput.scrollHeight,200)+'px';
-  updateSendBtn();
-});
-// Enter = Zeilenumbruch (kein Auto-Send mehr)
-msgInput.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){ /* Standard-Textarea-Verhalten: Zeilenumbruch */ }
-});
-sendBtn.addEventListener('click',sendMessage);
-document.querySelectorAll('.sugg-card').forEach(c=>{
-  c.addEventListener('click',()=>{msgInput.value=c.dataset.p;msgInput.dispatchEvent(new Event('input'));sendMessage();});
-});
 
 function updateSendBtn(){
   const ok=!!msgInput.value.trim()||pendingAttachments.length>0;
@@ -1721,19 +1726,6 @@ function updateSendBtn(){
 }
 
 /* ── File attachment ── */
-const fileInput=$('file-input');
-const attachBtn=$('attach-btn');
-const attachPreview=$('attach-preview');
-
-attachBtn.addEventListener('click',()=>fileInput.click());
-fileInput.addEventListener('change',async()=>{
-  for(const file of Array.from(fileInput.files)){
-    await addAttachment(file);
-  }
-  fileInput.value='';
-  renderAttachPreviews();
-  updateSendBtn();
-});
 
 async function addAttachment(file){
   const type = file.type.startsWith('image/') ? 'image'
@@ -2119,10 +2111,7 @@ function closeVoiceModal(){
   if(window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
-$('voice-modal').addEventListener('click', e=>{ if(e.target===$('voice-modal')) closeVoiceModal(); });
-
-/* Patch speakText to use selectedVoice */
-const _origSpeakText = speakText;
+/* speakText with selectedVoice support */
 function speakText(rawText, btn){
   // Intercept to inject selectedVoice into the utterance
   const tmp=document.createElement('div');
@@ -2397,21 +2386,21 @@ function exportChats() {
 // State for pending import
 let _importData = null;
 
-$('import-file').addEventListener('change', async function(){
-  const file = this.files[0];
+async function handleImportFile(){
+  const importFileEl = $('import-file');
+  const file = importFileEl ? importFileEl.files[0] : null;
   if(!file) return;
-  this.value = '';
+  if(importFileEl) importFileEl.value = '';
   try {
     const text = await file.text();
     const data = JSON.parse(text);
     if(!data.version || !Array.isArray(data.sessions))
       throw new Error(t('msg.invalidImport'));
     _importData = data;
-    // Show modal
     const info = $('imp-info');
     info.innerHTML = `<strong>${data.sessions.length} Chat(s)</strong> gefunden in <strong>${esc(file.name)}</strong>`+
       ` · exportiert am ${new Date(data.exportedAt).toLocaleString('de-DE')}`;
-    $('imp-status').className='imp-status'; // hide
+    $('imp-status').className='imp-status';
     $('imp-confirm-btn').disabled = false;
     $('import-modal').classList.add('on');
   } catch(e) {
@@ -2421,7 +2410,7 @@ $('import-file').addEventListener('change', async function(){
     $('imp-confirm-btn').disabled = true;
     $('import-modal').classList.add('on');
   }
-});
+}
 
 async function confirmImport(){
   if(!_importData) return;
@@ -2457,26 +2446,21 @@ function closeImportModal(){
   $('import-modal').classList.remove('on');
   _importData = null;
 }
-$('import-modal').addEventListener('click', e=>{ if(e.target===$('import-modal')) closeImportModal(); });
 
 /* ════════════════════════════════
    AUTH HELPERS
 ════════════════════════════════ */
-function showAuth(){loadingEl.style.display='none';authEl.style.display='flex';updateProtocolNotice();}
-function showErr(m){authErr.textContent=m;authErr.classList.add('on');}
-function hideErr(){authErr.classList.remove('on');}
+function showAuth(){
+  if(loadingEl) loadingEl.style.display='none';
+  if(authEl) authEl.style.display='flex';
+}
+function showErr(m){if(authErr){authErr.textContent=m;authErr.classList.add('on');}}
+function hideErr(){if(authErr) authErr.classList.remove('on');}
 
 /* ════════════════════════════════
    POLLINATIONS.AI – kein API-Key
 ════════════════════════════════ */
 async function ensurePuter(){ /* no-op – Pollinations.ai braucht keine Auth */ }
-
-/* ════════════════════════════════
-   AUTH HELPERS
-════════════════════════════════ */
-function showAuth(){loadingEl.style.display='none';authEl.style.display='flex';}
-function showErr(m){authErr.textContent=m;authErr.classList.add('on');}
-function hideErr(){authErr.classList.remove('on');}
 
 /* ── Direkt-Login ohne Auth ── */
 async function doPuterLogin(){
@@ -2485,10 +2469,9 @@ async function doPuterLogin(){
     localSave('aioai_user', ud);
     await finishLogin(ud);
   } catch(e) {
-    // Notfall: App trotzdem zeigen
-    loadingEl.style.display = 'none';
-    authEl.style.display = 'none';
-    appEl.classList.add('on');
+    if(loadingEl) loadingEl.style.display = 'none';
+    if(authEl)    authEl.style.display = 'none';
+    if(appEl)     appEl.classList.add('on');
   }
 }
 
