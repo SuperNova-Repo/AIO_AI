@@ -44,7 +44,7 @@
 
     /* ══════ LOADING ══════ */
     #loading{position:fixed;inset:0;z-index:400;background:var(--bg-100);
-      display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+      display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px}
     .ld-logo{width:56px;height:56px;object-fit:contain;border-radius:12px}
     .ld-fb{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),hsl(15,70%,45%));
       border-radius:12px;display:none;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff}
@@ -96,7 +96,7 @@
 
     /* ══════ AUTH ══════ */
     #auth{position:fixed;inset:0;z-index:300;background:var(--bg-100);
-      display:none;align-items:center;justify-content:center;padding:20px}
+      display:flex;align-items:center;justify-content:center;padding:20px}
     #auth::before{content:'';position:absolute;inset:0;pointer-events:none;
       background-image:linear-gradient(to right,var(--bg-200) 1px,transparent 1px),
         linear-gradient(to bottom,var(--bg-200) 1px,transparent 1px);
@@ -1599,22 +1599,24 @@ function withTimeout(promise, ms=5000){
 async function finishLogin(user) {
   try {
     currentUser = user;
-    loadingEl.style.display = 'flex';
-    applyI18n();
+    // Auth sofort ausblenden, App sofort einblenden
+    authEl.style.display = 'none';
+    appEl.classList.add('on');
+    // Nutzerdaten setzen
     const nameEl = $('u-name');
     const avatarEl = $('u-avatar');
     if(nameEl) nameEl.textContent = user.name;
     if(avatarEl) avatarEl.textContent = user.name.charAt(0).toUpperCase();
+    // Sessions aus localStorage laden (synchron, kein Spinner nötig)
     await loadSessions();
-  } catch(e) {
-    console.warn('finishLogin partial error:', e);
-    sessions = [];
-  } finally {
-    loadingEl.style.display = 'none';
-    authEl.style.display = 'none';
-    appEl.classList.add('on');
+    applyI18n();
     renderSidebarHistory();
     try { msgInput.focus(); } catch(e) {}
+  } catch(e) {
+    console.warn('finishLogin error:', e);
+    // Notfall: App trotzdem zeigen
+    authEl.style.display = 'none';
+    appEl.classList.add('on');
   }
 }
 
@@ -2508,6 +2510,7 @@ function closeImportModal(){
 function showAuth(){
   if(loadingEl) loadingEl.style.display='none';
   if(authEl) authEl.style.display='flex';
+  if(appEl) appEl.classList.remove('on');
 }
 function showErr(m){if(authErr){authErr.textContent=m;authErr.classList.add('on');}}
 function hideErr(){if(authErr) authErr.classList.remove('on');}
