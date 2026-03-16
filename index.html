@@ -1017,6 +1017,53 @@
   </div><!-- /main -->
 </div><!-- /app -->
 
+
+<!-- ════ PWA INSTALL BAR ════ -->
+<div id="pwa-install-bar">
+  <img src="assets/favico.png" alt="" class="pwa-bar-icon"
+       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+  <div class="pwa-bar-fb">A</div>
+  <div class="pwa-bar-text">
+    <div class="pwa-bar-title">AiO AI installieren</div>
+    <div class="pwa-bar-sub">Als App auf dem Startbildschirm speichern</div>
+  </div>
+  <button class="pwa-install-btn" onclick="pwaTriggerInstall()">Installieren</button>
+  <button class="pwa-dismiss-btn" onclick="pwaDismiss()" title="Schließen">
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ════ PWA IOS MODAL ════ -->
+<div id="pwa-ios-modal">
+  <div class="pwa-ios-card">
+    <div class="pwa-ios-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2v10M12 2l-4 4M12 2l4 4"/>
+        <rect x="2" y="14" width="20" height="8" rx="2"/>
+      </svg>
+      AiO AI als App installieren
+    </div>
+    <div class="pwa-ios-steps">
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-icon">⬆</div>
+        <div>Tippe auf das <strong style="color:var(--text-100)">Teilen-Symbol ⬆</strong> in der Safari-Leiste</div>
+      </div>
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-icon">＋</div>
+        <div>Wähle <strong style="color:var(--text-100)">„Zum Home-Bildschirm"</strong></div>
+      </div>
+      <div class="pwa-ios-step">
+        <div class="pwa-ios-step-icon">✓</div>
+        <div>Bestätige mit <strong style="color:var(--text-100)">„Hinzufügen"</strong></div>
+      </div>
+    </div>
+    <button class="pwa-install-btn" style="width:100%;padding:11px;margin-top:2px"
+            onclick="$('pwa-ios-modal').classList.remove('on')">Verstanden</button>
+  </div>
+</div>
+
 <script>
 /* ════════════════════════════════
    INTERNATIONALISATION (i18n)
@@ -1470,7 +1517,11 @@ function withTimeout(promise, ms=5000){
   ]);
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+/* ════════════════════════════════
+   INIT – Script ist am Ende des Body,
+   DOM ist garantiert vollständig geladen
+════════════════════════════════ */
+(async function initApp() {
 
   /* ── DOM refs zuweisen ── */
   loadingEl     = $('loading');
@@ -1525,26 +1576,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateSendBtn();
   });
 
-  // Mobile: Sidebar beim Start geschlossen
+  /* Mobile: Sidebar beim Start geschlossen */
   if (window.innerWidth <= 640) $('sb-float-toggle')?.classList.add('visible');
 
-  /* ── i18n + Start ── */
+  /* i18n */
   try { applyI18n(); } catch(e) {}
 
-  const hardFallback = setTimeout(() => {
-    if (loadingEl && loadingEl.style.display !== 'none') showAuth();
-  }, 4000);
-
+  /* ── App starten ── */
   try {
     const saved = localLoad('aioai_user');
-    clearTimeout(hardFallback);
     if (saved) { await finishLogin(saved); }
     else { showAuth(); }
   } catch(e) {
-    clearTimeout(hardFallback);
     showAuth();
   }
-});
+
+})();
 
 /* ════════════════════════════════
    FINISH LOGIN
@@ -2584,51 +2631,5 @@ function fmtDate(ts){
   }
 })();
 </script>
-
-<!-- ════ PWA INSTALL BAR ════ -->
-<div id="pwa-install-bar">
-  <img src="assets/favico.png" alt="" class="pwa-bar-icon"
-       onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-  <div class="pwa-bar-fb">A</div>
-  <div class="pwa-bar-text">
-    <div class="pwa-bar-title">AiO AI installieren</div>
-    <div class="pwa-bar-sub">Als App auf dem Startbildschirm speichern</div>
-  </div>
-  <button class="pwa-install-btn" onclick="pwaTriggerInstall()">Installieren</button>
-  <button class="pwa-dismiss-btn" onclick="pwaDismiss()" title="Schließen">
-    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
-      <path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/>
-    </svg>
-  </button>
-</div>
-
-<!-- ════ PWA IOS MODAL ════ -->
-<div id="pwa-ios-modal">
-  <div class="pwa-ios-card">
-    <div class="pwa-ios-title">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 2v10M12 2l-4 4M12 2l4 4"/>
-        <rect x="2" y="14" width="20" height="8" rx="2"/>
-      </svg>
-      AiO AI als App installieren
-    </div>
-    <div class="pwa-ios-steps">
-      <div class="pwa-ios-step">
-        <div class="pwa-ios-step-icon">⬆</div>
-        <div>Tippe auf das <strong style="color:var(--text-100)">Teilen-Symbol ⬆</strong> in der Safari-Leiste</div>
-      </div>
-      <div class="pwa-ios-step">
-        <div class="pwa-ios-step-icon">＋</div>
-        <div>Wähle <strong style="color:var(--text-100)">„Zum Home-Bildschirm"</strong></div>
-      </div>
-      <div class="pwa-ios-step">
-        <div class="pwa-ios-step-icon">✓</div>
-        <div>Bestätige mit <strong style="color:var(--text-100)">„Hinzufügen"</strong></div>
-      </div>
-    </div>
-    <button class="pwa-install-btn" style="width:100%;padding:11px;margin-top:2px"
-            onclick="$('pwa-ios-modal').classList.remove('on')">Verstanden</button>
-  </div>
-</div>
 </body>
 </html>
