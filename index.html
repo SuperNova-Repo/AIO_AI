@@ -1470,12 +1470,22 @@ function withTimeout(promise, ms=5000){
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  applyI18n();
-  // Pollinations.ai – kein Login erforderlich, direkt starten
-  const saved = localLoad('aioai_user');
-  if(saved){
-    await finishLogin(saved);
-  } else {
+  try { applyI18n(); } catch(e) {}
+  // Hard fallback: zeigt Auth-Screen nach 4s, egal was passiert
+  const hardFallback = setTimeout(() => {
+    if (loadingEl && loadingEl.style.display !== 'none') showAuth();
+  }, 4000);
+  try {
+    const saved = localLoad('aioai_user');
+    if(saved) {
+      clearTimeout(hardFallback);
+      await finishLogin(saved);
+    } else {
+      clearTimeout(hardFallback);
+      showAuth();
+    }
+  } catch(e) {
+    clearTimeout(hardFallback);
     showAuth();
   }
 });
@@ -1495,17 +1505,25 @@ $('logout-btn').addEventListener('click',async()=>{
    FINISH LOGIN
 ════════════════════════════════ */
 async function finishLogin(user) {
-  currentUser=user;
-  loadingEl.style.display='flex';
-  applyI18n();
-  $('u-name').textContent=user.name;
-  $('u-avatar').textContent=user.name.charAt(0).toUpperCase();
-  await loadSessions();
-  loadingEl.style.display='none';
-  authEl.style.display='none';
-  appEl.classList.add('on');
-  renderSidebarHistory();
-  msgInput.focus();
+  try {
+    currentUser = user;
+    loadingEl.style.display = 'flex';
+    applyI18n();
+    const nameEl = $('u-name');
+    const avatarEl = $('u-avatar');
+    if(nameEl) nameEl.textContent = user.name;
+    if(avatarEl) avatarEl.textContent = user.name.charAt(0).toUpperCase();
+    await loadSessions();
+  } catch(e) {
+    console.warn('finishLogin partial error:', e);
+    sessions = [];
+  } finally {
+    loadingEl.style.display = 'none';
+    authEl.style.display = 'none';
+    appEl.classList.add('on');
+    renderSidebarHistory();
+    try { msgInput.focus(); } catch(e) {}
+  }
 }
 
 /* ════════════════════════════════
@@ -2462,9 +2480,16 @@ function hideErr(){authErr.classList.remove('on');}
 
 /* ── Direkt-Login ohne Auth ── */
 async function doPuterLogin(){
-  const ud = { id:'local_'+Date.now(), name:'Gast', email:'' };
-  localSave('aioai_user', ud);
-  await finishLogin(ud);
+  try {
+    const ud = { id:'local_'+Date.now(), name:'Gast', email:'' };
+    localSave('aioai_user', ud);
+    await finishLogin(ud);
+  } catch(e) {
+    // Notfall: App trotzdem zeigen
+    loadingEl.style.display = 'none';
+    authEl.style.display = 'none';
+    appEl.classList.add('on');
+  }
 }
 
 /* ════════════════════════════════
@@ -2489,8 +2514,12 @@ function fmtDate(ts){
 
 // Dynamic copyright
 (function setCopyright(){
-  const START=2026, cur=new Date().getFullYear();
-  $('copyright-text').textContent = cur<=START ? `©${START}` : `©${START}–${cur}`;
+  try {
+    const el = document.getElementById('copyright-text');
+    if(!el) return;
+    const START=2026, cur=new Date().getFullYear();
+    el.textContent = cur<=START ? `©${START}` : `©${START}–${cur}`;
+  } catch(e) {}
 })();
 
 /* Enter key on auth – handled by button click */
